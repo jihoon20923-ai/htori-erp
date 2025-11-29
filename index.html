@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>HTORI ERP</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <header class="header">
+        <div class="logo">HTORI ERP</div>
+        <div class="header-right">
+            <span class="lang-btn" onclick="setLanguage('EN')">EN</span>
+            <span class="lang-btn" onclick="setLanguage('KR')">KR</span>
+            <span class="lang-btn" onclick="setLanguage('ID')">ID</span>
+        </div>
+    </header>
+
+    <aside class="sidebar">
+        <ul>
+            <li onclick="loadPage('dashboard')">Dashboard</li>
+            <li onclick="loadPage('stock')">Stock</li>
+            <li onclick="loadPage('purchase')">Purchase</li>
+            <li onclick="loadPage('outgoing')">Outgoing</li>
+            <li onclick="loadPage('production')">Production</li>
+            <li onclick="loadPage('outsourcing')">Outsourcing</li>
+            <li onclick="loadPage('finished')">Finished Goods</li>
+            <li onclick="loadPage('employees')">Employees</li>
+            <li onclick="loadPage('attendance')">Attendance</li>
+            <li onclick="loadPage('payroll')">Payroll</li>
+            <li onclick="loadPage('logs')">Logs</li>
+            <li onclick="loadPage('settings')">Settings</li>
+        </ul>
+    </aside>
+
+    <main id="content" class="content">
+        <h2>Welcome to HTORI ERP</h2>
+        <p>Select a menu from the left.</p>
+    </main>
+
+<script src="app.js"></script>
+</body>
+</html>
