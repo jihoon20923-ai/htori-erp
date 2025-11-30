@@ -8,3 +8,81 @@
 
 <body class="login-body">
 
+<script type="module">
+
+// ------------------------
+// 1. Firebase Import
+// ------------------------
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
+
+// ------------------------
+// 2. Firebase 설정
+// ------------------------
+const firebaseConfig = {
+    apiKey: "AIzaSyD1O8MltMEonyhbOXxYt1qN_PqQ9BqpI4M",
+    authDomain: "htori-erp.firebaseapp.com",
+    databaseURL: "https://htori-erp-default-rtdb.asia-southeast1.firebasedatabase.app/",
+    projectId: "htori-erp",
+    storageBucket: "htori-erp.firebasestorage.app",
+    messagingSenderId: "548265375862",
+    appId: "1:548265375862:web:01acd31b9c4c42cfc6c757",
+    measurementId: "G-ZGM2RDJVKX"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+
+// ------------------------
+// 3. 직원 로그인 함수
+// ------------------------
+window.loginEmployee = async function () {
+    const empId = document.getElementById("empId").value.trim();
+    const password = document.getElementById("empPw").value.trim();
+
+    if (!empId || !password) {
+        alert("직원 ID와 비밀번호를 입력하세요");
+        return;
+    }
+
+    const userRef = ref(db, "employees/" + empId);
+    const snapshot = await get(userRef);
+
+    if (!snapshot.exists()) {
+        alert("존재하지 않는 직원입니다.");
+        return;
+    }
+
+    const data = snapshot.val();
+
+    if (data.password !== password) {
+        alert("비밀번호가 틀렸습니다.");
+        return;
+    }
+
+    // 로그인 성공 → ERP 페이지로 이동
+    window.location.href = `index.html?role=employee&id=${empId}`;
+};
+
+
+
+// ------------------------
+// 4. 관리자 로그인 함수
+// ------------------------
+window.loginAdmin = async function () {
+    const adminId = document.getElementById("adminId").value.trim();
+    const adminPw = document.getElementById("adminPw").value.trim();
+
+    if (adminId !== "admin" || adminPw !== "1234") {
+        alert("관리자 정보가 틀렸습니다.");
+        return;
+    }
+
+    // 관리자 로그인 성공
+    window.location.href = `index.html?role=admin`;
+};
+
+</script>
+<button onclick="loginEmployee()">직원 로그인</button>
+<button onclick="loginAdmin()">관리자 로그인</button>
