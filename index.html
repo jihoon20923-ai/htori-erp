@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8" />
-    <title>HTORI ERP</title>
+    <title>HTORI ERP - 메인</title>
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -10,41 +10,27 @@
     <header class="header">
         <div class="logo">HTORI ERP</div>
         <div class="header-right">
-            <span class="lang-btn" onclick="setLanguage('EN')">EN</span>
-            <span class="lang-btn" onclick="setLanguage('KR')">KR</span>
-            <span class="lang-btn" onclick="setLanguage('ID')">ID</span>
+            <span id="userInfo">Guest</span>
+            <a href="login.html" style="margin-left:16px;">로그아웃</a>
         </div>
     </header>
 
-    <aside class="sidebar">
-        <ul>
-            <li onclick="loadPage('dashboard')">Dashboard</li>
-            <li onclick="loadPage('stock')">Stock</li>
-            <li onclick="loadPage('purchase')">Purchase</li>
-            <li onclick="loadPage('outgoing')">Outgoing</li>
-            <li onclick="loadPage('production')">Production</li>
-            <li onclick="loadPage('outsourcing')">Outsourcing</li>
-            <li onclick="loadPage('finished')">Finished Goods</li>
-            <li onclick="loadPage('employees')">Employees</li>
-            <li onclick="loadPage('attendance')">Attendance</li>
-            <li onclick="loadPage('payroll')">Payroll</li>
-            <li onclick="loadPage('logs')">Logs</li>
-            <li onclick="loadPage('settings')">Settings</li>
-        </ul>
-    </aside>
+    <main class="content">
+        <h2>근태(출근/퇴근) 관리</h2>
 
-    <main id="content" class="content">
-        <h2>Welcome to HTORI ERP</h2>
-        <p>Select a menu from the left.</p>
+        <p id="welcomeText">로그인 정보가 없습니다.</p>
+
+        <div class="attendance-box">
+            <button onclick="clockIn()">출근하기</button>
+            <button onclick="clockOut()">퇴근하기</button>
+        </div>
+
+        <div id="attInfo" style="margin-top:24px;">
+            <!-- 오늘 출퇴근 정보가 여기에 표시됨 -->
+        </div>
     </main>
 
-    <!-- Main JS -->
-    <script type="module" src="firebase.js"></script>
+    <!-- 출퇴근/근태 관련 JS -->
     <script type="module" src="app.js"></script>
-
 </body>
 </html>
-<div class="attendance-box">
-    <button onclick="clockIn()">출근하기</button>
-    <button onclick="clockOut()">퇴근하기</button>
-</div>
