@@ -22,3 +22,67 @@ function loadPage(page) {
 function setLanguage(lang) {
     alert("Language changed to: " + lang);
 }
+// =============================
+// 출근 기록 저장
+// =============================
+async function clockIn() {
+    const employee = JSON.parse(localStorage.getItem("HTORI_USER"));
+    if (!employee) return alert("로그인이 필요합니다.");
+
+    const today = new Date();
+    const dateStr = today.toISOString().split("T")[0];  
+    const timeStr = today.toTimeString().split(" ")[0]; 
+
+    await set(ref(db, `attendance/${employee.id}/${dateStr}/checkIn`), timeStr);
+
+    alert("출근 완료!");
+    loadAttendanceUI();
+}
+
+// =============================
+// 퇴근 기록 저장
+// =============================
+async function clockOut() {
+    const employee = JSON.parse(localStorage.getItem("HTORI_USER"));
+    if (!employee) return alert("로그인이 필요합니다.");
+
+    const today = new Date();
+    const dateStr = today.toISOString().split("T")[0];
+    const timeStr = today.toTimeString().split(" ")[0];
+
+    // Check In 기록 불러오기
+    const checkInSnap = await get(ref(db, `attendance/${employee.id}/${dateStr}/checkIn`));
+
+    if (!checkInSnap.exists()) {
+        alert("출근 기록이 없습니다.");
+        return;
+    }
+
+    const checkInTime = checkInSnap.val();
+
+    // 근무시간 계산
+    const workHours = calcHours(checkInTime, timeStr);
+
+    await set(ref(db, `attendance/${employee.id}/${dateStr}`), {
+        checkIn: checkInTime,
+        checkOut: timeStr,
+        workHours: workHours
+    });
+
+    alert("퇴근 완료!");
+    loadAttendanceUI();
+}
+
+// =============================
+// 근무시간 계산 함수
+// =============================
+function calcHours(inTime, outTime) {
+    const [ih, im, is] = inTime.split(":").map(Number);
+    const [oh, om, os] = outTime.split(":").map(Number);
+
+    const inDate = new Date(0,0,0, ih, im, is);
+    const outDate = new Date(0,0,0, oh, om, os);
+
+    const diff = (outDate - inDate) / 1000 / 3600;
+    return Math.round(diff * 100) / 100;
+}
