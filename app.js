@@ -86,3 +86,7 @@ function calcHours(inTime, outTime) {
     const diff = (outDate - inDate) / 1000 / 3600;
     return Math.round(diff * 100) / 100;
 }
+localStorage.setItem("HTORI_USER", JSON.stringify({
+    id: empId,
+    name: emp.name,
+}));
