@@ -3,11 +3,12 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:  # 수동 실행 가능
 
 permissions:
   contents: read
   pages: write
-  id-token: write
+  id-token: write     # ← 바로 이거 때문에 에러났음
 
 jobs:
   deploy:
@@ -26,7 +27,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: '.'   # 업로드할 파일 경로 (프로젝트 루트)
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
