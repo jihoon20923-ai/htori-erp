@@ -1,3 +1,87 @@
+const LANG = {
+    EN: {
+        dashboard: "Dashboard",
+        stock: "Stock",
+        purchase: "Purchase",
+        outgoing: "Outgoing",
+        production: "Production",
+        outsourcing: "Outsourcing",
+        finished: "Finished Goods",
+        employees: "Employees",
+        attendance: "Attendance",
+        payroll: "Payroll",
+        logs: "Logs",
+        settings: "Settings",
+        welcome: "Welcome to HTORI ERP",
+        selectMenu: "Select a menu from the left."
+    },
+
+    KR: {
+        dashboard: "대시보드",
+        stock: "재고",
+        purchase: "입고",
+        outgoing: "출고",
+        production: "생산",
+        outsourcing: "외주",
+        finished: "완제품",
+        employees: "직원 관리",
+        attendance: "근태",
+        payroll: "급여",
+        logs: "로그",
+        settings: "설정",
+        welcome: "HTORI ERP에 오신 것을 환영합니다",
+        selectMenu: "메뉴를 선택하세요."
+    },
+
+    ID: {
+        dashboard: "Dasbor",
+        stock: "Stok",
+        purchase: "Pembelian",
+        outgoing: "Pengeluaran",
+        production: "Produksi",
+        outsourcing: "Outsourcing",
+        finished: "Barang Jadi",
+        employees: "Karyawan",
+        attendance: "Absensi",
+        payroll: "Gaji",
+        logs: "Log",
+        settings: "Pengaturan",
+        welcome: "Selamat datang di HTORI ERP",
+        selectMenu: "Silakan pilih menu."
+    }
+};
+function setLanguage(lang) {
+    localStorage.setItem("HTORI_LANG", lang);
+    applyLanguage();
+}
+
+function applyLanguage() {
+    const lang = localStorage.getItem("HTORI_LANG") || "EN";
+    const t = LANG[lang];
+
+    // 메뉴 이름 적용
+    document.querySelector("aside ul").innerHTML = `
+        <li onclick="loadPage('dashboard')">${t.dashboard}</li>
+        <li onclick="loadPage('stock')">${t.stock}</li>
+        <li onclick="loadPage('purchase')">${t.purchase}</li>
+        <li onclick="loadPage('outgoing')">${t.outgoing}</li>
+        <li onclick="loadPage('production')">${t.production}</li>
+        <li onclick="loadPage('outsourcing')">${t.outsourcing}</li>
+        <li onclick="loadPage('finished')">${t.finished}</li>
+        <li onclick="loadPage('employees')">${t.employees}</li>
+        <li onclick="loadPage('attendance')">${t.attendance}</li>
+        <li onclick="loadPage('payroll')">${t.payroll}</li>
+        <li onclick="loadPage('logs')">${t.logs}</li>
+        <li onclick="loadPage('settings')">${t.settings}</li>
+    `;
+
+    // 기본 화면 텍스트 변경
+    document.querySelector("#content").innerHTML = `
+        <h2>${t.welcome}</h2>
+        <p>${t.selectMenu}</p>
+    `;
+}
+
 // app.js  - 출근/퇴근 전용 깔끔 버전
 
 // -----------------------------
