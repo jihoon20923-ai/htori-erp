@@ -2,22 +2,74 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>HTORI ERP CLEAN</title>
+  <title>HTORI ERP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
     body {
       margin: 0;
-      height: 100vh;
-      background: black;
-      color: white;
+      font-family: Arial, sans-serif;
+      background: #f2f5f8;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.6);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 30px;
-      font-family: Arial;
+    }
+
+    .box {
+      background: #fff;
+      padding: 24px;
+      width: 320px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      width: 100%;
+      padding: 8px;
+      background: #1f3c88;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    #app {
+      display: none;
+      padding: 24px;
+    }
+
+    nav {
+      width: 200px;
+      background: #111;
+      color: #fff;
+      height: 100vh;
+      padding: 10px;
+      float: left;
+    }
+
+    main {
+      margin-left: 200px;
+      padding: 24px;
     }
   </style>
 </head>
+
 <body>
-  HTORI ERP CLEAN START
-</body>
-</html>
+
+<!-- LOGIN -->
+<div id="login" class="modal">
+  <div class="box">
+    <h2>HTORI ERP LOGIN</h2>
+    <input id="id" placeholder="admin">
+    <input id="pw" type="passw
