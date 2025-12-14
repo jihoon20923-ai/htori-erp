@@ -1,210 +1,147 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8" />
 <title>HTORI ERP</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <style>
-body { margin:0; font-family:Arial, sans-serif; background:#f2f2f2; }
-#login, #app { display:none; }
-.center {
-  position:fixed; top:50%; left:50%;
-  transform:translate(-50%,-50%);
-  background:#fff; padding:30px;
-  box-shadow:0 10px 30px rgba(0,0,0,.2);
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
 }
-input { width:100%; margin-bottom:10px; padding:8px; }
-button { padding:8px 12px; cursor:pointer; }
+
+/* LOGIN */
+#login {
+  position: fixed;
+  inset: 0;
+  background: #f4f6f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-box {
+  background: #fff;
+  padding: 24px;
+  width: 320px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+
+.login-box h2 {
+  margin-top: 0;
+}
+
+.login-box input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.login-box button {
+  width: 100%;
+  padding: 8px;
+}
+
+/* APP */
+#app {
+  display: none;
+}
+
+.header {
+  background: #1f3c88;
+  color: #fff;
+  padding: 12px;
+}
+
+.layout {
+  display: flex;
+}
+
 .sidebar {
-  width:200px; background:#222; color:#fff;
-  height:100vh; position:fixed;
+  width: 200px;
+  background: #2b2b2b;
+  color: #fff;
+  min-height: calc(100vh - 48px);
 }
-.sidebar button {
-  width:100%; border:none; background:none;
-  color:#fff; padding:12px; text-align:left;
+
+.sidebar div {
+  padding: 10px;
+  cursor: pointer;
 }
-.main {
-  margin-left:200px; padding:20px;
+
+.sidebar div:hover {
+  background: #444;
 }
-table { width:100%; border-collapse:collapse; }
-th, td { border:1px solid #ccc; padding:6px; text-align:left; }
+
+.content {
+  padding: 20px;
+  flex: 1;
+}
+
+/* PAGES */
+.page {
+  display: none;
+}
 </style>
 </head>
 
 <body>
 
 <!-- LOGIN -->
-window.login = async function () {
-  const id = document.getElementById("loginId").value.trim();
-  const pw = document.getElementById("loginPw").value.trim();
-
-  if (!id || !pw) {
-    alert("ID / Password 입력");
-    return;
-  }
-
-  const ref = doc(db, "users", id);   // ✅ 핵심 수정
-  const snap = await getDoc(ref);
-
-  if (!snap.exists()) {
-    alert("존재하지 않는 계정");
-    return;
-  }
-
-  const user = snap.data();
-
-  if (user.password !== pw) {
-    alert("비밀번호 오류");
-    return;
-  }
-
-  localStorage.setItem("htori_user", JSON.stringify({
-    id,
-    role: user.role,
-    name: user.name
-  }));
-
-  showApp();
-};
-
+<div id="login">
+  <div class="login-box">
+    <h2>HTORI ERP LOGIN</h2>
+    <input id="loginId" placeholder="admin">
+    <input id="loginPw" type="password" placeholder="1234">
+    <button onclick="login()">Login</button>
+    <div id="loginError" style="color:red;margin-top:8px;"></div>
+  </div>
+</div>
 
 <!-- APP -->
-function showApp() {
-  const loginEl = document.getElementById("login");
-  const appEl = document.getElementById("app");
+<div id="app">
+  <div class="header">HTORI ERP</div>
 
-  if (loginEl) loginEl.style.display = "none";
-  if (appEl) appEl.style.display = "block";
-}
-
-    <!-- Dashboard -->
-    <div id="dashboardPage">
-      <h2>Dashboard</h2>
-      <p>Welcome to HTORI ERP</p>
+  <div class="layout">
+    <div class="sidebar">
+      <div onclick="openPage('dashboard')">Dashboard</div>
+      <div onclick="openPage('stock')">Stock</div>
     </div>
 
-    <!-- Stock -->
-    <div id="stockPage" style="display:none">
-      <h2>Stock</h2>
+    <div class="content">
+      <div id="dashboardPage" class="page">
+        <h2>Dashboard</h2>
+        <p>Welcome to HTORI ERP</p>
+      </div>
 
-      <input id="stockCode" placeholder="Code (ex: MAT-001)">
-      <input id="stockName" placeholder="Name">
-      <input id="stockQty" type="number" placeholder="Qty">
-      <button onclick="addStock()">Add / Update</button>
-
-      <table>
-        <thead>
-          <tr><th>Code</th><th>Name</th><th>Qty</th></tr>
-        </thead>
-        <tbody id="stockTable"></tbody>
-      </table>
+      <div id="stockPage" class="page">
+        <h2>Stock</h2>
+        <p>Stock page works.</p>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- FIREBASE + LOGIC -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc,
-  getDocs,
-  collection,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<script>
+function login() {
+  const id = document.getElementById("loginId").value;
+  const pw = document.getElementById("loginPw").value;
 
-/* 🔴 본인 Firebase 값으로 교체 */
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-/* ---------- LOGIN ---------- */
-window.login = async function () {
-  const id = loginId.value;
-  const pw = loginPw.value;
-
-  const ref = doc(db, "users", id);
-  const snap = await getDoc(ref);
-
-  if (!snap.exists()) {
-    alert("No user");
-    return;
+  if (id === "admin" && pw === "1234") {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    openPage("dashboard");
+  } else {
+    document.getElementById("loginError").innerText = "Wrong ID or password";
   }
-
-  const user = snap.data();
-  if (user.password !== pw) {
-    alert("Wrong password");
-    return;
-  }
-
-  localStorage.setItem("htori_user", JSON.stringify({
-    id, role:user.role, name:user.name
-  }));
-
-  showApp();
-};
-
-function showApp() {
-document.getElementById("login").style.display = "none";
-document.getElementById("app").style.display = "block";
 }
 
-window.logout = function () {
-  localStorage.removeItem("htori_user");
-  location.reload();
-};
-
-/* ---------- PAGE ---------- */
-window.openPage = function (p) {
-  const pages = ["dashboardPage", "stockPage"];
-
-  pages.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = "none";
-  });
-
+function openPage(p) {
+  document.querySelectorAll(".page").forEach(el => el.style.display = "none");
   const target = document.getElementById(p + "Page");
   if (target) target.style.display = "block";
-
-  if (p === "stock") loadStock();
-};
-/* ---------- STOCK ---------- */
-async function loadStock() {
-  stockTable.innerHTML = "";
-  const snap = await getDocs(collection(db, "stock"));
-  snap.forEach(d => {
-    const s = d.data();
-    stockTable.innerHTML += `
-      <tr>
-        <td>${d.id}</td>
-        <td>${s.name}</td>
-        <td>${s.qty}</td>
-      </tr>`;
-  });
-}
-
-window.addStock = async function () {
-  await setDoc(doc(db, "stock", stockCode.value), {
-    name: stockName.value,
-    qty: Number(stockQty.value),
-    updatedAt: serverTimestamp()
-  });
-  loadStock();
-};
-
-/* ---------- AUTO LOGIN ---------- */
-if (localStorage.getItem("htori_user")) {
-  showApp();
-} else {
-  document.getElementById("login").style.display = "block";
 }
 </script>
 
