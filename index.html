@@ -70,14 +70,14 @@ window.login = async function () {
 
 
 <!-- APP -->
-<div id="app">
-  <div class="sidebar">
-    <button onclick="openPage('dashboard')">Dashboard</button>
-    <button onclick="openPage('stock')">Stock</button>
-    <button onclick="logout()">Logout</button>
-  </div>
+function showApp() {
+  const loginEl = document.getElementById("login");
+  const appEl = document.getElementById("app");
 
-  <div class="main">
+  if (loginEl) loginEl.style.display = "none";
+  if (appEl) appEl.style.display = "block";
+}
+
     <!-- Dashboard -->
     <div id="dashboardPage">
       <h2>Dashboard</h2>
@@ -164,13 +164,18 @@ window.logout = function () {
 
 /* ---------- PAGE ---------- */
 window.openPage = function (p) {
-  document.getElementById("dashboardPage").style.display = "none";
-  document.getElementById("stockPage").style.display = "none";
-  document.getElementById(p + "Page").style.display = "block";
+  const pages = ["dashboardPage", "stockPage"];
+
+  pages.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+
+  const target = document.getElementById(p + "Page");
+  if (target) target.style.display = "block";
 
   if (p === "stock") loadStock();
 };
-
 /* ---------- STOCK ---------- */
 async function loadStock() {
   stockTable.innerHTML = "";
