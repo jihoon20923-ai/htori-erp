@@ -1,133 +1,137 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>HTORI ERP</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f2f5f8;
-    }
+    * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
+    body { margin: 0; background: #f2f5f8; }
 
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    /* LOGIN */
+    .login-wrap {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.55);
+      display: flex; align-items: center; justify-content: center;
     }
-
-    .box {
-      background: #fff;
-      padding: 24px;
-      width: 320px;
+    .login-box {
+      width: 320px; background: #fff; padding: 20px;
       border-radius: 8px;
-      text-align: center;
+    }
+    .login-box h2 { margin-top: 0; text-align: center; }
+    .login-box input {
+      width: 100%; padding: 8px; margin-bottom: 10px;
+    }
+    .login-box button {
+      width: 100%; padding: 8px;
+      background: #1f3c88; color: #fff;
+      border: none; cursor: pointer;
     }
 
-    input {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
+    /* APP */
+    #app { display: none; }
+    header {
+      height: 50px; background: #1f3c88; color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px;
     }
-
-    button {
-      width: 100%;
-      padding: 8px;
-      background: #1f3c88;
-      color: #fff;
-      border: none;
-      cursor: pointer;
+    header button {
+      background: #fff; color: #1f3c88;
+      border: none; padding: 6px 10px; cursor: pointer;
     }
-
-    #app {
-      display: none;
-      padding: 24px;
-    }
-
+    .layout { display: flex; }
     nav {
-      width: 200px;
-      background: #111;
-      color: #fff;
-      height: 100vh;
-      padding: 10px;
-      float: left;
+      width: 200px; background: #111; color: #fff;
+      min-height: calc(100vh - 50px);
+      padding: 12px;
     }
-
-    main {
-      margin-left: 200px;
-      padding: 24px;
-    }
+    nav div { margin-bottom: 10px; cursor: pointer; }
+    main { flex: 1; padding: 20px; background: #fff; }
   </style>
 </head>
 
 <body>
 
 <!-- LOGIN -->
-<div id="login" class="modal">
-  <div class="box">
+<div id="login" class="login-wrap">
+  <div class="login-box">
     <h2>HTORI ERP LOGIN</h2>
-    <input id="id" placeholder="admin">
-    <input id="pw" type="password" placeholder="1234">
+    <input id="email" placeholder="admin@htori.com" />
+    <input id="password" type="password" placeholder="password" />
     <button onclick="login()">Login</button>
   </div>
 </div>
 
 <!-- APP -->
 <div id="app">
-  <nav>
-    Dashboard<br><br>
-    Stock<br>
-    Production<br>
-    Shipment<br>
-  </nav>
-  <main>
-    <h1>Welcome to HTORI ERP</h1>
-  </main>
+  <header>
+    <div>HTORI ERP</div>
+    <button onclick="logout()">Logout</button>
+  </header>
+
+  <div class="layout">
+    <nav>
+      <div>Dashboard</div>
+      <div>Stock</div>
+      <div>Production</div>
+      <div>Shipment</div>
+    </nav>
+
+    <main>
+      <h1>Welcome to HTORI ERP</h1>
+      <p>Select a menu from the left.</p>
+    </main>
+  </div>
 </div>
 
+<!-- FIREBASE -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } 
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import {
+    getAuth,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-/* 🔽 여기에 Firebase 콘솔에서 복사한 값 붙여넣기 */
-const firebaseConfig = {
-  apiKey: "XXXX",
-  authDomain: "XXXX.firebaseapp.com",
-  projectId: "XXXX",
-  storageBucket: "XXXX.appspot.com",
-  messagingSenderId: "XXXX",
-  appId: "XXXX"
-};
+  /* 🔴 여기만 본인 Firebase 값으로 교체 */
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
 
-window.login = function () {
-  const email = document.getElementById("id").value;
-  const pw = document.getElementById("pw").value;
+  // 로그인
+  window.login = function () {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-  signInWithEmailAndPassword(auth, email, pw)
-    .then(() => {
+    signInWithEmailAndPassword(auth, email, password)
+      .catch(err => alert(err.message));
+  };
+
+  // 로그아웃
+  window.logout = function () {
+    signOut(auth);
+  };
+
+  // 로그인 상태 감지 (핵심)
+  onAuthStateChanged(auth, user => {
+    if (user) {
       document.getElementById("login").style.display = "none";
       document.getElementById("app").style.display = "block";
-    })
-    .catch(err => alert(err.message));
-};
-
-onAuthStateChanged(auth, user => {
-  if (user) {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("app").style.display = "block";
-  }
-});
+    } else {
+      document.getElementById("login").style.display = "flex";
+      document.getElementById("app").style.display = "none";
+    }
+  });
 </script>
-
 
 </body>
 </html>
