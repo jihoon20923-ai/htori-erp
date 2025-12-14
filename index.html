@@ -35,12 +35,39 @@ th, td { border:1px solid #ccc; padding:6px; text-align:left; }
 <body>
 
 <!-- LOGIN -->
-<div id="login" class="center">
-  <h2>HTORI ERP LOGIN</h2>
-  <input id="loginId" placeholder="ID">
-  <input id="loginPw" type="password" placeholder="Password">
-  <button onclick="login()">Login</button>
-</div>
+window.login = async function () {
+  const id = document.getElementById("loginId").value.trim();
+  const pw = document.getElementById("loginPw").value.trim();
+
+  if (!id || !pw) {
+    alert("ID / Password 입력");
+    return;
+  }
+
+  const ref = doc(db, "users", id);   // ✅ 핵심 수정
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    alert("존재하지 않는 계정");
+    return;
+  }
+
+  const user = snap.data();
+
+  if (user.password !== pw) {
+    alert("비밀번호 오류");
+    return;
+  }
+
+  localStorage.setItem("htori_user", JSON.stringify({
+    id,
+    role: user.role,
+    name: user.name
+  }));
+
+  showApp();
+};
+
 
 <!-- APP -->
 <div id="app">
