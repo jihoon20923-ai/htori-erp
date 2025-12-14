@@ -90,25 +90,44 @@
   </main>
 </div>
 
-<script>
-function login() {
-  const id = document.getElementById("id").value;
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } 
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+/* 🔽 여기에 Firebase 콘솔에서 복사한 값 붙여넣기 */
+const firebaseConfig = {
+  apiKey: "XXXX",
+  authDomain: "XXXX.firebaseapp.com",
+  projectId: "XXXX",
+  storageBucket: "XXXX.appspot.com",
+  messagingSenderId: "XXXX",
+  appId: "XXXX"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+window.login = function () {
+  const email = document.getElementById("id").value;
   const pw = document.getElementById("pw").value;
 
-  if (id === "admin" && pw === "1234") {
-    localStorage.setItem("htori_login", "Y");
+  signInWithEmailAndPassword(auth, email, pw)
+    .then(() => {
+      document.getElementById("login").style.display = "none";
+      document.getElementById("app").style.display = "block";
+    })
+    .catch(err => alert(err.message));
+};
+
+onAuthStateChanged(auth, user => {
+  if (user) {
     document.getElementById("login").style.display = "none";
     document.getElementById("app").style.display = "block";
-  } else {
-    alert("login fail");
   }
-}
-
-if (localStorage.getItem("htori_login") === "Y") {
-  document.getElementById("login").style.display = "none";
-  document.getElementById("app").style.display = "block";
-}
+});
 </script>
+
 
 </body>
 </html>
