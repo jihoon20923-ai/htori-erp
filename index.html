@@ -126,8 +126,8 @@ window.login = async function () {
 };
 
 function showApp() {
-  login.style.display = "none";
-  app.style.display = "block";
+document.getElementById("login").style.display = "none";
+document.getElementById("app").style.display = "block";
 }
 
 window.logout = function () {
@@ -137,9 +137,10 @@ window.logout = function () {
 
 /* ---------- PAGE ---------- */
 window.openPage = function (p) {
-  dashboardPage.style.display = "none";
-  stockPage.style.display = "none";
+  document.getElementById("dashboardPage").style.display = "none";
+  document.getElementById("stockPage").style.display = "none";
   document.getElementById(p + "Page").style.display = "block";
+
   if (p === "stock") loadStock();
 };
 
@@ -171,7 +172,7 @@ window.addStock = async function () {
 if (localStorage.getItem("htori_user")) {
   showApp();
 } else {
-  login.style.display = "block";
+  document.getElementById("login").style.display = "block";
 }
 </script>
 
