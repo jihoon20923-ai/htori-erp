@@ -72,4 +72,43 @@
   <div class="box">
     <h2>HTORI ERP LOGIN</h2>
     <input id="id" placeholder="admin">
-    <input id="pw" type="passw
+    <input id="pw" type="password" placeholder="1234">
+    <button onclick="login()">Login</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <nav>
+    Dashboard<br><br>
+    Stock<br>
+    Production<br>
+    Shipment<br>
+  </nav>
+  <main>
+    <h1>Welcome to HTORI ERP</h1>
+  </main>
+</div>
+
+<script>
+function login() {
+  const id = document.getElementById("id").value;
+  const pw = document.getElementById("pw").value;
+
+  if (id === "admin" && pw === "1234") {
+    localStorage.setItem("htori_login", "Y");
+    document.getElementById("login").style.display = "none";
+    document.getElementById("app").style.display = "block";
+  } else {
+    alert("login fail");
+  }
+}
+
+if (localStorage.getItem("htori_login") === "Y") {
+  document.getElementById("login").style.display = "none";
+  document.getElementById("app").style.display = "block";
+}
+</script>
+
+</body>
+</html>
