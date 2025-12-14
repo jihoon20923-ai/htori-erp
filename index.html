@@ -8,7 +8,6 @@
     * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
     body { margin: 0; background: #f2f5f8; }
 
-    /* LOGIN */
     .login-wrap {
       position: fixed; inset: 0;
       background: rgba(0,0,0,.55);
@@ -28,7 +27,6 @@
       border: none; cursor: pointer;
     }
 
-    /* APP */
     #app { display: none; }
     header {
       height: 50px; background: #1f3c88; color: #fff;
@@ -45,14 +43,13 @@
       min-height: calc(100vh - 50px);
       padding: 12px;
     }
-    nav div { margin-bottom: 10px; cursor: pointer; }
+    nav div { margin-bottom: 10px; }
     main { flex: 1; padding: 20px; background: #fff; }
   </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
 <div id="login" class="login-wrap">
   <div class="login-box">
     <h2>HTORI ERP LOGIN</h2>
@@ -62,7 +59,6 @@
   </div>
 </div>
 
-<!-- APP -->
 <div id="app">
   <header>
     <div>HTORI ERP</div>
@@ -76,15 +72,12 @@
       <div>Production</div>
       <div>Shipment</div>
     </nav>
-
     <main>
       <h1>Welcome to HTORI ERP</h1>
-      <p>Select a menu from the left.</p>
     </main>
   </div>
 </div>
 
-<!-- FIREBASE -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import {
@@ -94,7 +87,6 @@
     onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-  /* 🔴 여기만 본인 Firebase 값으로 교체 */
   const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -107,29 +99,20 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
-  // 로그인
   window.login = function () {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
-
     signInWithEmailAndPassword(auth, email, password)
       .catch(err => alert(err.message));
   };
 
-  // 로그아웃
   window.logout = function () {
     signOut(auth);
   };
 
-  // 로그인 상태 감지 (핵심)
   onAuthStateChanged(auth, user => {
-    if (user) {
-      document.getElementById("login").style.display = "none";
-      document.getElementById("app").style.display = "block";
-    } else {
-      document.getElementById("login").style.display = "flex";
-      document.getElementById("app").style.display = "none";
-    }
+    document.getElementById("login").style.display = user ? "none" : "flex";
+    document.getElementById("app").style.display = user ? "block" : "none";
   });
 </script>
 
