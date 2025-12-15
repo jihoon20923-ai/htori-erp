@@ -183,31 +183,13 @@ function loadStock() {
   });
 }
 
-<script>
 function addStock() {
-  const code = sCode.value.trim();
-  const name = sName.value.trim();
-  const qty = Number(sQty.value);
-
-  if (!code || !name || !qty) {
-    alert("Fill all fields");
-    return;
-  }
-
   const data = getStock();
-
-  const found = data.find(item => item.code === code);
-
-  if (found) {
-    found.qty = Number(found.qty) + qty;
-  } else {
-    data.push({
-      code: code,
-      name: name,
-      qty: qty
-    });
-  }
-
+  data.push({
+    code: sCode.value,
+    name: sName.value,
+    qty: sQty.value
+  });
   saveStock(data);
   loadStock();
 
@@ -216,7 +198,6 @@ function addStock() {
   sQty.value = "";
 }
 </script>
-
 
 </body>
 </html>
