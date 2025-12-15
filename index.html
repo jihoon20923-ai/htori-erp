@@ -128,15 +128,12 @@ th, td {
 let stockData = [];
 
 /* ===== 로그인 ===== */
-function login() {
-  if (loginId.value === "admin" && loginPw.value === "1234") {
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("erp").style.display = "block";
-    loadPage("dashboard");
-  } else {
-    alert("Login failed");
-  }
+function logout() {
+  localStorage.removeItem("htori_login");      // ★ 추가
+  document.getElementById("erp").style.display = "none";
+  document.getElementById("loginBox").style.display = "block";
 }
+
 
 function logout() {
   document.getElementById("erp").style.display = "none";
@@ -217,6 +214,14 @@ function renderStock() {
   });
 }
 </script>
+// ===== 새로고침 시 로그인 유지 =====
+window.onload = function () {
+  if (localStorage.getItem("htori_login") === "Y") {
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("erp").style.display = "block";
+    loadPage("dashboard");
+  }
+};
 
 </body>
 </html>
