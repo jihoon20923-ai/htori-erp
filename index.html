@@ -13,35 +13,19 @@ body {
 }
 
 /* LOGIN */
-#login {
-  position: fixed;
-  inset: 0;
-  background: #f4f6f8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+<script>
+function login() {
+  const id = document.getElementById("loginId").value;
+  const pw = document.getElementById("loginPw").value;
 
-.login-box {
-  background: #fff;
-  padding: 24px;
-  width: 320px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.15);
-}
-
-.login-box h2 {
-  margin-top: 0;
-}
-
-.login-box input {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 10px;
-}
-
-.login-box button {
-  width: 100%;
-  padding: 8px;
+  if (id === "admin" && pw === "1234") {
+    localStorage.setItem("htori_login", "ok");   // ⭐ 핵심
+    document.getElementById("login").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    openPage("dashboard");
+  } else {
+    document.getElementById("loginError").innerText = "Wrong ID or password";
+  }
 }
 
 /* APP */
