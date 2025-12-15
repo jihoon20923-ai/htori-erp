@@ -5,45 +5,42 @@
 <title>HTORI ERP</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-}
+body { margin:0; font-family: Arial; }
 
-/* LOGIN */
 #loginBox {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 300px;
-  margin: 120px auto;
+  width:300px;
+  margin:120px auto;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
 }
 
-/* ERP LAYOUT */
-#erp {
-  display: none;
-  height: 100vh;
-}
+#erp { display:none; height:100vh; }
 
 #sidebar {
-  width: 200px;
-  background: #222;
-  color: #fff;
-  padding: 10px;
+  width:200px;
+  background:#222;
+  color:#fff;
 }
 
 #sidebar div {
-  padding: 10px;
-  cursor: pointer;
+  padding:10px;
+  cursor:pointer;
 }
 
-#sidebar div:hover {
-  background: #444;
-}
+#sidebar div:hover { background:#444; }
 
-#content {
-  flex: 1;
-  padding: 20px;
+#content { flex:1; padding:20px; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top:10px;
+}
+th, td {
+  border:1px solid #ccc;
+  padding:6px;
+  text-align:left;
 }
 </style>
 </head>
@@ -67,19 +64,16 @@ body {
     <div onclick="logout()">Logout</div>
   </div>
 
-  <div id="content">
-    <!-- page content -->
-  </div>
+  <div id="content"></div>
 </div>
 
 <script>
-function login() {
-  const id = document.getElementById("loginId").value;
-  const pw = document.getElementById("loginPw").value;
+let stockData = [];
 
-  if (id === "admin" && pw === "1234") {
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("erp").style.display = "flex";
+function login() {
+  if (loginId.value === "admin" && loginPw.value === "1234") {
+    loginBox.style.display = "none";
+    erp.style.display = "flex";
     loadPage("dashboard");
   } else {
     alert("Login failed");
@@ -87,13 +81,11 @@ function login() {
 }
 
 function logout() {
-  document.getElementById("erp").style.display = "none";
-  document.getElementById("loginBox").style.display = "flex";
+  erp.style.display = "none";
+  loginBox.style.display = "flex";
 }
 
 function loadPage(page) {
-  const content = document.getElementById("content");
-
   if (page === "dashboard") {
     content.innerHTML = `
       <h2>Dashboard</h2>
@@ -104,16 +96,63 @@ function loadPage(page) {
   if (page === "stock") {
     content.innerHTML = `
       <h2>Stock</h2>
-      <p>Stock management page</p>
+
+      <input id="sCode" placeholder="Code">
+      <input id="sName" placeholder="Name">
+      <input id="sQty" type="number" placeholder="Qty">
+      <button onclick="addStock()">Add</button>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Qty</th>
+          </tr>
+        </thead>
+        <tbody id="stockBody"></tbody>
+      </table>
     `;
+    renderStock();
   }
 
   if (page === "purchase") {
-    content.innerHTML = `
-      <h2>Purchase</h2>
-      <p>Purchase management page</p>
-    `;
+    content.innerHTML = `<h2>Purchase</h2>`;
   }
+}
+
+function addStock() {
+  const code = sCode.value;
+  const name = sName.value;
+  const qty = Number(sQty.value);
+
+  if (!code || !name || !qty) {
+    alert("Fill all fields");
+    return;
+  }
+
+  stockData.push({ code, name, qty });
+  renderStock();
+
+  sCode.value = "";
+  sName.value = "";
+  sQty.value = "";
+}
+
+function renderStock() {
+  const body = document.getElementById("stockBody");
+  if (!body) return;
+
+  body.innerHTML = "";
+  stockData.forEach(item => {
+    body.innerHTML += `
+      <tr>
+        <td>${item.code}</td>
+        <td>${item.name}</td>
+        <td>${item.qty}</td>
+      </tr>
+    `;
+  });
 }
 </script>
 
