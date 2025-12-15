@@ -47,25 +47,35 @@ th, td {
 
 <body>
 
-<!-- LOGIN -->
-<div id="loginBox">
-  <h2>HTORI ERP LOGIN</h2>
-  <input id="loginId" placeholder="admin">
-  <input id="loginPw" type="password" placeholder="1234">
-  <button onclick="login()">Login</button>
-</div>
+/* ===== Stock 화면 전용 스타일 ===== */
 
-<!-- ERP -->
-<div id="erp">
-  <div id="sidebar">
-    <div onclick="loadPage('dashboard')">Dashboard</div>
-    <div onclick="loadPage('stock')">Stock</div>
-    <div onclick="loadPage('purchase')">Purchase</div>
-    <div onclick="logout()">Logout</div>
-  </div>
+/* Stock 제목 */
+#content h2 {
+  font-size: 22px;   /* 지금 STOCK 제목 크기 유지 */
+  margin-bottom: 12px;
+}
 
-  <div id="content"></div>
-</div>
+/* 입력창, 버튼 글자 크기 통일 */
+#content input,
+#content button {
+  font-size: 14px;
+  padding: 4px 6px;
+}
+
+/* 테이블 전체 글자 크기 통일 */
+#content table {
+  font-size: 14px;
+}
+
+#content th {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+#content td {
+  font-size: 14px;
+}
+
 
 <script>
 let stockData = [];
