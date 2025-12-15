@@ -1,140 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>HTORI ERP</title>
+<meta charset="UTF-8">
+<title>HTORI ERP</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-    }
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
 
-    /* ===== LOGIN ===== */
-    #login {
-      position: fixed;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+/* LOGIN */
+#loginBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 300px;
+  margin: 120px auto;
+}
 
-    .login-box {
-      background: #fff;
-      padding: 30px 40px;
-      border-radius: 8px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-      min-width: 320px;
-    }
+/* ERP LAYOUT */
+#erp {
+  display: none;
+  height: 100vh;
+}
 
-    .login-box h1 {
-      text-align: center;
-      margin-top: 0;
-    }
+#sidebar {
+  width: 200px;
+  background: #222;
+  color: #fff;
+  padding: 10px;
+}
 
-    .login-box input {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
-    }
+#sidebar div {
+  padding: 10px;
+  cursor: pointer;
+}
 
-    .login-box button {
-      width: 100%;
-      padding: 8px;
-      cursor: pointer;
-    }
+#sidebar div:hover {
+  background: #444;
+}
 
-    .error {
-      color: red;
-      margin-top: 8px;
-      text-align: center;
-    }
-
-    /* ===== ERP ===== */
-    #erp {
-      display: none;
-      height: 100vh;
-    }
-
-    .sidebar {
-      width: 200px;
-      background: #1f2937;
-      color: #fff;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
-    .sidebar div {
-      margin-bottom: 12px;
-      cursor: pointer;
-    }
-
-    .content {
-      flex: 1;
-      padding: 20px;
-    }
-
-    .layout {
-      display: flex;
-      height: 100%;
-    }
-  </style>
+#content {
+  flex: 1;
+  padding: 20px;
+}
+</style>
 </head>
 
 <body>
 
 <!-- LOGIN -->
-<div id="login">
-  <div class="login-box">
-    <h1>HTORI ERP LOGIN</h1>
-
-    <input id="loginId" placeholder="ID">
-    <input id="loginPw" type="password" placeholder="Password">
-
-    <button onclick="login()">Login</button>
-
-    <div id="loginError" class="error"></div>
-  </div>
+<div id="loginBox">
+  <h2>HTORI ERP LOGIN</h2>
+  <input id="loginId" placeholder="admin">
+  <input id="loginPw" type="password" placeholder="1234">
+  <button onclick="login()">Login</button>
 </div>
 
 <!-- ERP -->
 <div id="erp">
-  <div class="layout">
-    <div class="sidebar">
-      <div>Dashboard</div>
-      <div>Stock</div>
-      <div>Purchase</div>
-      <div>Production</div>
-      <div>Settings</div>
-      <div onclick="logout()">Logout</div>
-    </div>
+  <div id="sidebar">
+    <div onclick="loadPage('dashboard')">Dashboard</div>
+    <div onclick="loadPage('stock')">Stock</div>
+    <div onclick="loadPage('purchase')">Purchase</div>
+    <div onclick="logout()">Logout</div>
+  </div>
 
-    <div class="content">
-      <h2>Welcome to HTORI ERP</h2>
-      <p>로그인 성공</p>
-    </div>
+  <div id="content">
+    <!-- page content -->
   </div>
 </div>
 
 <script>
-  function login() {
-    const id = document.getElementById("loginId").value;
-    const pw = document.getElementById("loginPw").value;
-    const err = document.getElementById("loginError");
+function login() {
+  const id = document.getElementById("loginId").value;
+  const pw = document.getElementById("loginPw").value;
 
-    if (id === "admin" && pw === "1234") {
-      document.getElementById("login").style.display = "none";
-      document.getElementById("erp").style.display = "block";
-    } else {
-      err.textContent = "ID 또는 비밀번호가 틀렸습니다.";
-    }
+  if (id === "admin" && pw === "1234") {
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("erp").style.display = "flex";
+    loadPage("dashboard");
+  } else {
+    alert("Login failed");
+  }
+}
+
+function logout() {
+  document.getElementById("erp").style.display = "none";
+  document.getElementById("loginBox").style.display = "flex";
+}
+
+function loadPage(page) {
+  const content = document.getElementById("content");
+
+  if (page === "dashboard") {
+    content.innerHTML = `
+      <h2>Dashboard</h2>
+      <p>Welcome to HTORI ERP</p>
+    `;
   }
 
-  function logout() {
-    document.getElementById("erp").style.display = "none";
-    document.getElementById("login").style.display = "flex";
+  if (page === "stock") {
+    content.innerHTML = `
+      <h2>Stock</h2>
+      <p>Stock management page</p>
+    `;
   }
+
+  if (page === "purchase") {
+    content.innerHTML = `
+      <h2>Purchase</h2>
+      <p>Purchase management page</p>
+    `;
+  }
+}
 </script>
 
 </body>
