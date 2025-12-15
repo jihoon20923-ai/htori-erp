@@ -5,94 +5,24 @@
 <title>HTORI ERP</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-/* LOGIN */
-#loginBox {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.login-card {
-  border: 1px solid #ccc;
-  padding: 30px;
-  width: 360px;
-  text-align: center;
-}
-
-.login-card input {
-  width: 100%;
-  padding: 6px;
-  margin-bottom: 10px;
-}
-
-/* ERP */
-#erp {
-  display: none;
-}
-
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 180px;
-  height: 100vh;
-  background: #222;
-  color: #fff;
-}
-
-.sidebar div {
-  padding: 14px;
-  cursor: pointer;
-}
-
-.sidebar div:hover {
-  background: #444;
-}
-
-.content {
-  margin-left: 180px;
-  padding: 20px;
-}
-
-/* COMMON */
-h1, h2 {
-  font-size: 22px;
-}
-
-input, button {
-  font-size: 14px;
-  padding: 4px 6px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  font-size: 14px;
-}
-
-th, td {
-  border: 1px solid #ccc;
-  padding: 6px;
-}
-
-button.small {
-  font-size: 12px;
-  padding: 2px 6px;
-}
+body{margin:0;font-family:Arial}
+#loginBox{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+.login-card{border:1px solid #ccc;padding:30px;width:360px;text-align:center}
+#erp{display:none}
+.sidebar{position:fixed;top:0;left:0;width:180px;height:100vh;background:#222;color:#fff}
+.sidebar div{padding:14px;cursor:pointer}
+.sidebar div:hover{background:#444}
+.content{margin-left:180px;padding:20px}
+h2{font-size:22px}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px}
+th,td{border:1px solid #ccc;padding:6px}
+button.small{font-size:12px;padding:2px 6px}
+input,select,button{font-size:14px;padding:4px}
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
 <div id="loginBox">
   <div class="login-card">
     <h2>HTORI ERP LOGIN</h2>
@@ -102,212 +32,83 @@ button.small {
   </div>
 </div>
 
-<!-- ERP -->
 <div id="erp">
   <div class="sidebar">
-    <div onclick="loadPage('dashboard')">Dashboard</div>
-    <div onclick="loadPage('stock')">Stock</div>
-    <div onclick="loadPage('purchase')">Purchase</div>
+    <div onclick="page('stock')">Stock</div>
+    <div onclick="page('purchase')">Purchase</div>
     <div onclick="logout()">Logout</div>
   </div>
-
   <div class="content" id="content"></div>
 </div>
 
 <script>
-/* ===== LOGIN ===== */
-function login() {
-  if (loginId.value === "admin" && loginPw.value === "1234") {
-    localStorage.setItem("htori_login", "Y");
-    loginBox.style.display = "none";
-    erp.style.display = "block";
-    loadPage("dashboard");
-  } else {
-    alert("Login failed");
+/* LOGIN */
+function login(){
+  if(loginId.value==="admin"&&loginPw.value==="1234"){
+    localStorage.setItem("login","Y");
+    loginBox.style.display="none";erp.style.display="block";page("stock");
   }
 }
+function logout(){localStorage.removeItem("login");location.reload()}
+if(localStorage.getItem("login")==="Y"){loginBox.style.display="none";erp.style.display="block"}
 
-function logout() {
-  localStorage.removeItem("htori_login");
-  erp.style.display = "none";
-  loginBox.style.display = "flex";
-}
+/* STORAGE */
+const getP=()=>JSON.parse(localStorage.getItem("purchase")||"[]");
+const saveP=d=>localStorage.setItem("purchase",JSON.stringify(d));
 
-window.onload = function () {
-  if (localStorage.getItem("htori_login") === "Y") {
-    loginBox.style.display = "none";
-    erp.style.display = "block";
-    loadPage("dashboard");
-  }
-};
-
-/* ===== STORAGE ===== */
-function getStock() {
-  return JSON.parse(localStorage.getItem("htori_stock") || "[]");
-}
-
-function saveStock(data) {
-  localStorage.setItem("htori_stock", JSON.stringify(data));
-}
-
-function getPurchase() {
-  return JSON.parse(localStorage.getItem("htori_purchase") || "[]");
-}
-
-function savePurchase(data) {
-  localStorage.setItem("htori_purchase", JSON.stringify(data));
-}
-
-/* ===== PAGE ===== */
-function loadPage(page) {
-  if (page === "dashboard") {
-    content.innerHTML = `<h1>Dashboard</h1>`;
+/* STOCK = 집계 */
+function page(p){
+  if(p==="stock"){
+    const map={};
+    getP().forEach(i=>{
+      if(!map[i.code])map[i.code]={name:i.name,qty:0};
+      map[i.code].qty+=i.qty;
+    });
+    content.innerHTML=`
+      <h2>Stock (Read Only)</h2>
+      <table><tr><th>Code</th><th>Name</th><th>Qty</th></tr>
+      ${Object.keys(map).map(c=>`
+        <tr><td>${c}</td><td>${map[c].name}</td><td>${map[c].qty}</td></tr>`).join("")}
+      </table>`;
   }
 
-  if (page === "stock") {
-    content.innerHTML = `
-      <h2>Stock</h2>
-
-      <input id="sCode" placeholder="Code">
-      <input id="sName" placeholder="Name">
-      <input id="sQty" type="number" placeholder="Qty">
-      <button onclick="addStock()">Add</button>
+  if(p==="purchase"){
+    content.innerHTML=`
+      <h2>Purchase</h2>
+      <input type="date" id="d">
+      <select id="t"><option>Container</option><option>Air</option></select>
+      <input id="c" placeholder="Code">
+      <input id="n" placeholder="Name">
+      <input id="q" type="number" placeholder="Qty">
+      <button onclick="add()">Add</button>
 
       <table>
-        <thead>
+        <tr><th>Date</th><th>Type</th><th>Code</th><th>Name</th><th>Qty</th><th>Action</th></tr>
+        ${getP().map((i,idx)=>`
           <tr>
-            <th>Code</th>
-            <th>Name</th>
-            <th>Qty</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="stockBody"></tbody>
-      </table>
-    `;
-    loadStock();
-  }
-
-  if (page === "purchase") {
-    content.innerHTML = `
-      <h2>Purchase (Inbound)</h2>
-
-      <input id="pCode" placeholder="Code">
-      <input id="pName" placeholder="Name">
-      <input id="pQty" type="number" placeholder="Qty">
-      <button onclick="addPurchase()">Receive</button>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Code</th>
-            <th>Name</th>
-            <th>Qty</th>
-          </tr>
-        </thead>
-        <tbody id="purchaseBody"></tbody>
-      </table>
-    `;
-    loadPurchase();
+            <td>${i.date}</td><td>${i.type}</td><td>${i.code}</td><td>${i.name}</td><td>${i.qty}</td>
+            <td>
+              <button class="small" onclick="edit(${idx})">Edit</button>
+              <button class="small" onclick="del(${idx})">Del</button>
+            </td>
+          </tr>`).join("")}
+      </table>`;
+    d.value=new Date().toISOString().slice(0,10);
   }
 }
 
-/* ===== STOCK ===== */
-function loadStock() {
-  const data = getStock();
-  stockBody.innerHTML = "";
-  data.forEach((item, index) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${item.code}</td>
-      <td>${item.name}</td>
-      <td>${item.qty}</td>
-      <td>
-        <button class="small" onclick="editStock(${index})">Edit</button>
-        <button class="small" onclick="deleteStock(${index})">Del</button>
-      </td>
-    `;
-    stockBody.appendChild(tr);
-  });
+function add(){
+  const p=getP();
+  p.push({date:d.value,type:t.value,code:c.value,name:n.value,qty:Number(q.value)});
+  saveP(p);page("purchase");
 }
 
-function addStock() {
-  const code = sCode.value.trim();
-  const name = sName.value.trim();
-  const qty = Number(sQty.value);
-
-  if (!code || !name || !qty) return alert("Fill all fields");
-
-  const data = getStock();
-  const found = data.find(i => i.code === code);
-
-  if (found) found.qty += qty;
-  else data.push({ code, name, qty });
-
-  saveStock(data);
-  loadStock();
-
-  sCode.value = sName.value = sQty.value = "";
+function edit(i){
+  const p=getP();const x=p[i];
+  d.value=x.date;t.value=x.type;c.value=x.code;n.value=x.name;q.value=x.qty;
+  p.splice(i,1);saveP(p);page("purchase");
 }
-
-function editStock(index) {
-  const data = getStock();
-  const item = data[index];
-  sCode.value = item.code;
-  sName.value = item.name;
-  sQty.value = item.qty;
-  data.splice(index, 1);
-  saveStock(data);
-  loadStock();
-}
-
-function deleteStock(index) {
-  if (!confirm("Delete?")) return;
-  const data = getStock();
-  data.splice(index, 1);
-  saveStock(data);
-  loadStock();
-}
-
-/* ===== PURCHASE ===== */
-function loadPurchase() {
-  const data = getPurchase();
-  purchaseBody.innerHTML = "";
-  data.forEach(item => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${item.code}</td>
-      <td>${item.name}</td>
-      <td>${item.qty}</td>
-    `;
-    purchaseBody.appendChild(tr);
-  });
-}
-
-function addPurchase() {
-  const code = pCode.value.trim();
-  const name = pName.value.trim();
-  const qty = Number(pQty.value);
-
-  if (!code || !name || !qty) return alert("Fill all fields");
-
-  /* Purchase log */
-  const pData = getPurchase();
-  pData.push({ code, name, qty });
-  savePurchase(pData);
-  loadPurchase();
-
-  /* Stock increase */
-  const sData = getStock();
-  const found = sData.find(i => i.code === code);
-
-  if (found) found.qty += qty;
-  else sData.push({ code, name, qty });
-
-  saveStock(sData);
-
-  pCode.value = pName.value = pQty.value = "";
-}
+function del(i){const p=getP();p.splice(i,1);saveP(p);page("purchase")}
 </script>
 
 </body>
