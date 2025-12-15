@@ -110,6 +110,122 @@ function edit(i){
 }
 function del(i){const p=getP();p.splice(i,1);saveP(p);page("purchase")}
 </script>
+<script>
+/* ===============================
+   HTORI CORE CONTROL LOGIC
+   (통제형 ERP 핵심)
+================================ */
+
+// 1️⃣ 권한 체크
+function canEdit(){
+  return ["manager","owner"].includes(currentUser?.role);
+}
+
+function canDelete(){
+  return ["owner"].includes(currentUser?.role);
+}
+
+// 2️⃣ 월마감 체크
+function isMonthClosed(date){
+  if(!date) return false;
+  const month = date.slice(0,7);
+  return window.closedMonths?.includes(month);
+}
+
+// 3️⃣ BOM 변경 + LOG
+function updateBOM(productCode, newBom){
+  if(!canEdit()) return alert("권한 없음");
+
+  const ref = db.ref("bom").child(productCode);
+
+  ref.once("value").then(snap=>{
+    const oldBom = snap.val();
+
+    db.ref("bom_log").push({
+      productCode,
+      before: oldBom,
+      after: newBom,
+      changedBy: currentUser.id,
+      changedAt: new Date().toISOString()
+    });
+
+    ref.set(newBom);
+    alert("BOM 변경 완료 (전체 적용)");
+  });
+}
+
+// 4️⃣ 공정 처리 (재고 차감 → 신규 코드 생성)
+function processProduction({ inputCode, processCode, outputCode, qty }){
+  if(!canEdit()) return alert("권한 없음");
+  if(qty <= 0) return alert("수량 오류");
+
+  // 입력 코드 차감
+  db.ref("materials").orderByChild("code").equalTo(inputCode)
+    .once("value").then(snap=>{
+      if(!snap.exists()) return alert("입력 코드 없음");
+
+      const key = Object.keys(snap.val())[0];
+      const mat = snap.val()[key];
+
+      if(mat.qty < qty) return alert("재고 부족");
+
+      db.ref(`materials/${key}/qty`).set(mat.qty - qty);
+    });
+
+  // 공정 로그
+  db.ref("process_log").push({
+    inputCode,
+    processCode,
+    outputCode,
+    qty,
+    worker: currentUser.id,
+    createdAt: new Date().toISOString()
+  });
+
+  // 출력 코드 증가
+  db.ref("materials").orderByChild("code").equalTo(outputCode)
+    .once("value").then(snap=>{
+      if(snap.exists()){
+        const k = Object.keys(snap.val())[0];
+        const v = snap.val()[k];
+        db.ref(`materials/${k}/qty`).set((v.qty||0) + qty);
+      }else{
+        db.ref("materials").push({
+          code: outputCode,
+          qty,
+          createdAt: new Date().toISOString()
+        });
+      }
+    });
+
+  alert("공정 처리 완료");
+}
+
+// 5️⃣ 불량 처리 = 재고 손실
+function recordDefect(code, qty, reason){
+  if(!canEdit()) return alert("권한 없음");
+
+  db.ref("materials").orderByChild("code").equalTo(code)
+    .once("value").then(snap=>{
+      if(!snap.exists()) return alert("코드 없음");
+
+      const k = Object.keys(snap.val())[0];
+      const v = snap.val()[k];
+
+      if(v.qty < qty) return alert("재고 부족");
+
+      db.ref(`materials/${k}/qty`).set(v.qty - qty);
+    });
+
+  db.ref("scrap_log").push({
+    code, qty, reason,
+    createdBy: currentUser.id,
+    createdAt: new Date().toISOString()
+  });
+
+  alert("불량 처리 완료");
+}
+</script>
 
 </body>
 </html>
