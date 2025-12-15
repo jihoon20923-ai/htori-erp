@@ -10,7 +10,7 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* ===== LOGIN ===== */
+/* LOGIN */
 #loginBox {
   position: fixed;
   inset: 0;
@@ -32,7 +32,7 @@ body {
   margin-bottom: 10px;
 }
 
-/* ===== ERP ===== */
+/* ERP */
 #erp {
   display: none;
 }
@@ -61,9 +61,14 @@ body {
   padding: 20px;
 }
 
-/* ===== COMMON ===== */
+/* COMMON */
 h1, h2 {
   font-size: 22px;
+}
+
+input, button {
+  font-size: 14px;
+  padding: 4px 6px;
 }
 
 table {
@@ -76,13 +81,11 @@ table {
 th, td {
   border: 1px solid #ccc;
   padding: 6px;
-  text-align: left;
 }
 
 button.small {
   font-size: 12px;
   padding: 2px 6px;
-  margin-right: 4px;
 }
 </style>
 </head>
@@ -104,6 +107,7 @@ button.small {
   <div class="sidebar">
     <div onclick="loadPage('dashboard')">Dashboard</div>
     <div onclick="loadPage('stock')">Stock</div>
+    <div onclick="loadPage('purchase')">Purchase</div>
     <div onclick="logout()">Logout</div>
   </div>
 
@@ -129,7 +133,6 @@ function logout() {
   loginBox.style.display = "flex";
 }
 
-/* AUTO LOGIN */
 window.onload = function () {
   if (localStorage.getItem("htori_login") === "Y") {
     loginBox.style.display = "none";
@@ -138,10 +141,25 @@ window.onload = function () {
   }
 };
 
+/* ===== STORAGE ===== */
+function getStock() {
+  return JSON.parse(localStorage.getItem("htori_stock") || "[]");
+}
+
+function saveStock(data) {
+  localStorage.setItem("htori_stock", JSON.stringify(data));
+}
+
+function getPurchase() {
+  return JSON.parse(localStorage.getItem("htori_purchase") || "[]");
+}
+
+function savePurchase(data) {
+  localStorage.setItem("htori_purchase", JSON.stringify(data));
+}
+
 /* ===== PAGE ===== */
 function loadPage(page) {
-  const content = document.getElementById("content");
-
   if (page === "dashboard") {
     content.innerHTML = `<h1>Dashboard</h1>`;
   }
@@ -169,21 +187,35 @@ function loadPage(page) {
     `;
     loadStock();
   }
+
+  if (page === "purchase") {
+    content.innerHTML = `
+      <h2>Purchase (Inbound)</h2>
+
+      <input id="pCode" placeholder="Code">
+      <input id="pName" placeholder="Name">
+      <input id="pQty" type="number" placeholder="Qty">
+      <button onclick="addPurchase()">Receive</button>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Qty</th>
+          </tr>
+        </thead>
+        <tbody id="purchaseBody"></tbody>
+      </table>
+    `;
+    loadPurchase();
+  }
 }
 
-/* ===== STOCK STORAGE ===== */
-function getStock() {
-  return JSON.parse(localStorage.getItem("htori_stock") || "[]");
-}
-
-function saveStock(data) {
-  localStorage.setItem("htori_stock", JSON.stringify(data));
-}
-
+/* ===== STOCK ===== */
 function loadStock() {
   const data = getStock();
   stockBody.innerHTML = "";
-
   data.forEach((item, index) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -199,56 +231,82 @@ function loadStock() {
   });
 }
 
-/* ===== ADD / UPDATE ===== */
 function addStock() {
   const code = sCode.value.trim();
   const name = sName.value.trim();
   const qty = Number(sQty.value);
 
-  if (!code || !name || !qty) {
-    alert("Fill all fields");
-    return;
-  }
+  if (!code || !name || !qty) return alert("Fill all fields");
 
   const data = getStock();
-  const found = data.find(item => item.code === code);
+  const found = data.find(i => i.code === code);
 
-  if (found) {
-    found.qty += qty;
-  } else {
-    data.push({ code, name, qty });
-  }
+  if (found) found.qty += qty;
+  else data.push({ code, name, qty });
 
   saveStock(data);
   loadStock();
 
-  sCode.value = "";
-  sName.value = "";
-  sQty.value = "";
+  sCode.value = sName.value = sQty.value = "";
 }
 
-/* ===== EDIT ===== */
 function editStock(index) {
   const data = getStock();
   const item = data[index];
-
   sCode.value = item.code;
   sName.value = item.name;
   sQty.value = item.qty;
-
-  data.splice(index, 1);   // 기존 데이터 제거
+  data.splice(index, 1);
   saveStock(data);
   loadStock();
 }
 
-/* ===== DELETE ===== */
 function deleteStock(index) {
-  if (!confirm("Delete this item?")) return;
-
+  if (!confirm("Delete?")) return;
   const data = getStock();
   data.splice(index, 1);
   saveStock(data);
   loadStock();
+}
+
+/* ===== PURCHASE ===== */
+function loadPurchase() {
+  const data = getPurchase();
+  purchaseBody.innerHTML = "";
+  data.forEach(item => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${item.code}</td>
+      <td>${item.name}</td>
+      <td>${item.qty}</td>
+    `;
+    purchaseBody.appendChild(tr);
+  });
+}
+
+function addPurchase() {
+  const code = pCode.value.trim();
+  const name = pName.value.trim();
+  const qty = Number(pQty.value);
+
+  if (!code || !name || !qty) return alert("Fill all fields");
+
+  /* Purchase log */
+  const pData = getPurchase();
+  pData.push({ code, name, qty });
+  savePurchase(pData);
+  loadPurchase();
+
+  /* Stock increase */
+  const sData = getStock();
+  const found = sData.find(i => i.code === code);
+
+  if (found) found.qty += qty;
+  else sData.push({ code, name, qty });
+
+  saveStock(sData);
+
+  pCode.value = pName.value = pQty.value = "";
 }
 </script>
 
