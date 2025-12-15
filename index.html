@@ -1,74 +1,85 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>HTORI ERP</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <title>HTORI ERP</title>
 
-<style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f4f6f8;
-}
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+    }
 
-/* LOGIN */
-<script>
-function login() {
-  const id = document.getElementById("loginId").value;
-  const pw = document.getElementById("loginPw").value;
+    /* ===== LOGIN ===== */
+    #login {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-  if (id === "admin" && pw === "1234") {
-    localStorage.setItem("htori_login", "ok");   // ⭐ 핵심
-    document.getElementById("login").style.display = "none";
-    document.getElementById("app").style.display = "block";
-    openPage("dashboard");
-  } else {
-    document.getElementById("loginError").innerText = "Wrong ID or password";
-  }
-}
+    .login-box {
+      background: #fff;
+      padding: 30px 40px;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      min-width: 320px;
+    }
 
-/* APP */
-#app {
-  display: none;
-}
+    .login-box h1 {
+      text-align: center;
+      margin-top: 0;
+    }
 
-.header {
-  background: #1f3c88;
-  color: #fff;
-  padding: 12px;
-}
+    .login-box input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
 
-.layout {
-  display: flex;
-}
+    .login-box button {
+      width: 100%;
+      padding: 8px;
+      cursor: pointer;
+    }
 
-.sidebar {
-  width: 200px;
-  background: #2b2b2b;
-  color: #fff;
-  min-height: calc(100vh - 48px);
-}
+    .error {
+      color: red;
+      margin-top: 8px;
+      text-align: center;
+    }
 
-.sidebar div {
-  padding: 10px;
-  cursor: pointer;
-}
+    /* ===== ERP ===== */
+    #erp {
+      display: none;
+      height: 100vh;
+    }
 
-.sidebar div:hover {
-  background: #444;
-}
+    .sidebar {
+      width: 200px;
+      background: #1f2937;
+      color: #fff;
+      padding: 20px;
+      box-sizing: border-box;
+    }
 
-.content {
-  padding: 20px;
-  flex: 1;
-}
+    .sidebar div {
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
 
-/* PAGES */
-.page {
-  display: none;
-}
-</style>
+    .content {
+      flex: 1;
+      padding: 20px;
+    }
+
+    .layout {
+      display: flex;
+      height: 100%;
+    }
+  </style>
 </head>
 
 <body>
@@ -76,57 +87,54 @@ function login() {
 <!-- LOGIN -->
 <div id="login">
   <div class="login-box">
-    <h2>HTORI ERP LOGIN</h2>
-    <input id="loginId" placeholder="admin">
-    <input id="loginPw" type="password" placeholder="1234">
+    <h1>HTORI ERP LOGIN</h1>
+
+    <input id="loginId" placeholder="ID">
+    <input id="loginPw" type="password" placeholder="Password">
+
     <button onclick="login()">Login</button>
-    <div id="loginError" style="color:red;margin-top:8px;"></div>
+
+    <div id="loginError" class="error"></div>
   </div>
 </div>
 
-<!-- APP -->
-<div id="app">
-  <div class="header">HTORI ERP</div>
-
+<!-- ERP -->
+<div id="erp">
   <div class="layout">
     <div class="sidebar">
-      <div onclick="openPage('dashboard')">Dashboard</div>
-      <div onclick="openPage('stock')">Stock</div>
+      <div>Dashboard</div>
+      <div>Stock</div>
+      <div>Purchase</div>
+      <div>Production</div>
+      <div>Settings</div>
+      <div onclick="logout()">Logout</div>
     </div>
 
     <div class="content">
-      <div id="dashboardPage" class="page">
-        <h2>Dashboard</h2>
-        <p>Welcome to HTORI ERP</p>
-      </div>
-
-      <div id="stockPage" class="page">
-        <h2>Stock</h2>
-        <p>Stock page works.</p>
-      </div>
+      <h2>Welcome to HTORI ERP</h2>
+      <p>로그인 성공</p>
     </div>
   </div>
 </div>
 
 <script>
-function login() {
-  const id = document.getElementById("loginId").value;
-  const pw = document.getElementById("loginPw").value;
+  function login() {
+    const id = document.getElementById("loginId").value;
+    const pw = document.getElementById("loginPw").value;
+    const err = document.getElementById("loginError");
 
-  if (id === "admin" && pw === "1234") {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("app").style.display = "block";
-    openPage("dashboard");
-  } else {
-    document.getElementById("loginError").innerText = "Wrong ID or password";
+    if (id === "admin" && pw === "1234") {
+      document.getElementById("login").style.display = "none";
+      document.getElementById("erp").style.display = "block";
+    } else {
+      err.textContent = "ID 또는 비밀번호가 틀렸습니다.";
+    }
   }
-}
 
-function openPage(p) {
-  document.querySelectorAll(".page").forEach(el => el.style.display = "none");
-  const target = document.getElementById(p + "Page");
-  if (target) target.style.display = "block";
-}
+  function logout() {
+    document.getElementById("erp").style.display = "none";
+    document.getElementById("login").style.display = "flex";
+  }
 </script>
 
 </body>
