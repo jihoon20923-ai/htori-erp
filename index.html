@@ -1,201 +1,135 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>HTORI ERP - Clean Start</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8" />
+<title>HTORI ERP – Step 1</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f5f6f8}
+  .topbar{
+    height:56px;background:#1F3C88;color:#fff;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 12px;position:fixed;left:0;right:0;top:0
+  }
+  .brand{font-weight:700}
+  .layout{display:flex;margin-top:56px}
+  .sidebar{
+    width:200px;background:#111;color:#fff;min-height:calc(100vh - 56px);
+    padding:10px
+  }
+  .sidebar button{
+    width:100%;padding:10px;margin-bottom:6px;border:0;border-radius:6px;
+    background:#222;color:#fff;cursor:pointer;text-align:left
+  }
+  .sidebar button.active{background:#444}
+  .content{flex:1;padding:16px}
+  .card{background:#fff;border-radius:8px;padding:12px;margin-bottom:12px}
+  .muted{color:#666}
+</style>
 
-  <style>
-    * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
-    body { margin:0; background:#f4f6f8; }
-
-    header {
-      height:50px; background:#1F3C88; color:#fff;
-      display:flex; align-items:center; padding:0 16px;
-      font-weight:bold;
-    }
-
-    .layout { display:flex; height:calc(100vh - 50px); }
-
-    aside {
-      width:200px; background:#111; color:#fff;
-      padding:10px;
-    }
-
-    aside button {
-      width:100%; margin-bottom:6px; padding:8px;
-      background:#222; color:#fff; border:0;
-      text-align:left; cursor:pointer;
-    }
-
-    aside button:hover { background:#333; }
-
-    main {
-      flex:1; padding:16px; background:#fff;
-      overflow:auto;
-    }
-
-    h1 { margin-top:0; font-size:22px; }
-
-    .row { display:flex; gap:8px; margin-bottom:8px; }
-    input, select, button {
-      padding:6px; font-size:14px;
-    }
-
-    table {
-      width:100%; border-collapse:collapse; margin-top:10px;
-    }
-    th, td {
-      border:1px solid #ccc; padding:6px; text-align:left;
-      font-size:14px;
-    }
-
-    .login {
-      position:fixed; inset:0;
-      display:flex; align-items:center; justify-content:center;
-      background:rgba(0,0,0,.3);
-    }
-
-    .login-box {
-      background:#fff; padding:20px; width:300px;
-      border-radius:6px;
-    }
-  </style>
-
-  <!-- Firebase v8 -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<!-- Firebase (v8 – 단순) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 
 <body>
 
-<header>HTORI ERP (CLEAN START)</header>
-
-<div class="layout">
-  <aside>
-    <button onclick="showPage('purchase')">Purchase</button>
-    <button onclick="logout()">Logout</button>
-  </aside>
-
-  <main id="content"></main>
+<!-- TOP -->
+<div class="topbar">
+  <div class="brand">HTORI ERP</div>
+  <div class="muted">Step 1</div>
 </div>
 
-<!-- LOGIN -->
-<div id="login" class="login">
-  <div class="login-box">
-    <h3>Login</h3>
-    <input id="loginId" placeholder="admin"><br><br>
-    <input id="loginPw" type="password" placeholder="1234"><br><br>
-    <button onclick="login()">Login</button>
-  </div>
+<!-- LAYOUT -->
+<div class="layout">
+  <aside class="sidebar">
+    <button id="m-dashboard" onclick="show('dashboard')">Dashboard</button>
+    <button id="m-purchase" onclick="show('purchase')">Purchase</button>
+    <button id="m-stock" onclick="show('stock')">Stock</button>
+  </aside>
+
+  <main id="content" class="content"></main>
 </div>
 
 <script>
 /* ===============================
-   Firebase Config
+   Firebase 설정 (당신의 프로젝트)
 ================================ */
 firebase.initializeApp({
   apiKey: "AIzaSyDwiTlPtoXraEtA7TzTctdH6DJS6gdSEGQ",
-  databaseURL: "https://htori-erp-3c22b-default-rtdb.asia-southeast1.firebasedatabase.app"
+  authDomain: "htori-erp-3c22b.firebaseapp.com",
+  databaseURL: "https://htori-erp-3c22b-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "htori-erp-3c22b"
 });
 const db = firebase.database();
 
 /* ===============================
-   LOGIN
+   메뉴/페이지
 ================================ */
-function login(){
-  const id = loginId.value;
-  const pw = loginPw.value;
-  if(id==="admin" && pw==="1234"){
-    localStorage.setItem("login","1");
-    document.getElementById("login").style.display="none";
-    showPage("purchase");
-  } else {
-    alert("login fail");
-  }
+function setActive(id){
+  document.querySelectorAll(".sidebar button")
+    .forEach(b=>b.classList.remove("active"));
+  document.getElementById("m-"+id).classList.add("active");
 }
 
-function logout(){
-  localStorage.removeItem("login");
-  location.reload();
-}
-
-if(localStorage.getItem("login")==="1"){
-  document.getElementById("login").style.display="none";
-  showPage("purchase");
-}
-
-/* ===============================
-   PAGE SWITCH
-================================ */
-function showPage(page){
+function show(page){
+  setActive(page);
+  if(page==="dashboard") renderDashboard();
   if(page==="purchase") renderPurchase();
+  if(page==="stock") renderStock();
 }
 
 /* ===============================
-   PURCHASE (입고)
+   Pages (아직 기능 없음)
 ================================ */
+function renderDashboard(){
+  content.innerHTML = `
+    <div class="card">
+      <h2>Dashboard</h2>
+      <p class="muted">Step 1: 화면/메뉴/Firebase 연결 확인</p>
+      <button onclick="testFirebase()">Firebase Test</button>
+      <div id="fbResult" class="muted"></div>
+    </div>
+  `;
+}
+
 function renderPurchase(){
   content.innerHTML = `
-    <h1>Purchase</h1>
-
-    <div class="row">
-      <input type="date" id="p_date">
-      <select id="p_type">
-        <option value="Container">Container</option>
-        <option value="Air">Air</option>
-      </select>
-      <input id="p_code" placeholder="Code">
-      <input id="p_name" placeholder="Name">
-      <input id="p_qty" type="number" placeholder="Qty">
-      <button onclick="addPurchase()">Add</button>
+    <div class="card">
+      <h2>Purchase</h2>
+      <p class="muted">다음 단계에서 입고 기능이 들어옵니다.</p>
     </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th><th>Type</th><th>Code</th><th>Name</th><th>Qty</th>
-        </tr>
-      </thead>
-      <tbody id="p_list"></tbody>
-    </table>
   `;
-
-  p_date.value = new Date().toISOString().split("T")[0];
-  loadPurchase();
 }
 
-function addPurchase(){
-  const data = {
-    date: p_date.value,
-    type: p_type.value,
-    code: p_code.value,
-    name: p_name.value,
-    qty: Number(p_qty.value)
-  };
-  if(!data.code || !data.qty) return alert("Code & Qty");
-
-  db.ref("purchase").push(data).then(loadPurchase);
-  p_code.value=""; p_name.value=""; p_qty.value="";
+function renderStock(){
+  content.innerHTML = `
+    <div class="card">
+      <h2>Stock</h2>
+      <p class="muted">다음 단계에서 재고 테이블이 들어옵니다.</p>
+    </div>
+  `;
 }
 
-function loadPurchase(){
-  p_list.innerHTML="";
-  db.ref("purchase").once("value").then(s=>{
-    Object.values(s.val()||{}).forEach(r=>{
-      const tr=document.createElement("tr");
-      tr.innerHTML=`
-        <td>${r.date}</td>
-        <td>${r.type}</td>
-        <td>${r.code}</td>
-        <td>${r.name||""}</td>
-        <td>${r.qty}</td>
-      `;
-      p_list.appendChild(tr);
+/* ===============================
+   Firebase 연결 테스트
+================================ */
+function testFirebase(){
+  const ref = db.ref("test");
+  ref.set({ ok:true, at:new Date().toISOString() })
+    .then(()=>ref.once("value"))
+    .then(snap=>{
+      fbResult.innerText =
+        "Firebase OK: " + JSON.stringify(snap.val());
+    })
+    .catch(e=>{
+      fbResult.innerText = "Firebase ERROR";
+      console.error(e);
     });
-  });
 }
-</script>
 
+/* 초기 화면 */
+show("dashboard");
+</script>
 </body>
 </html>
