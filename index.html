@@ -5,81 +5,116 @@
 <title>HTORI ERP</title>
 
 <style>
-body { margin:0; font-family: Arial; }
-
-#loginBox {
-  width:300px;
-  margin:120px auto;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
+/* ===== 기본 ===== */
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-#erp { display:none; height:100vh; }
+/* ===== 로그인 ===== */
+#loginBox {
+  width: 320px;
+  margin: 120px auto;
+}
+
+#loginBox h2 {
+  font-size: 22px;
+  margin-bottom: 10px;
+}
+
+#loginBox input {
+  width: 100%;
+  font-size: 14px;
+  padding: 5px;
+  margin-bottom: 6px;
+}
+
+#loginBox button {
+  font-size: 14px;
+  padding: 5px 10px;
+}
+
+/* ===== ERP 레이아웃 ===== */
+#erp {
+  display: none;
+  height: 100vh;
+}
 
 #sidebar {
-  width:200px;
-  background:#222;
-  color:#fff;
+  width: 200px;
+  background: #222;
+  color: #fff;
 }
 
 #sidebar div {
-  padding:10px;
-  cursor:pointer;
+  padding: 12px;
+  cursor: pointer;
+  font-size: 14px; /* ← 주메뉴 글씨 크기 고정 */
 }
 
-#sidebar div:hover { background:#444; }
-
-#content { flex:1; padding:20px; }
-
-table {
-  border-collapse: collapse;
-  width: 100%;
-  margin-top:10px;
+#sidebar div:hover {
+  background: #444;
 }
-th, td {
-  border:1px solid #ccc;
-  padding:6px;
-  text-align:left;
+
+#content {
+  flex: 1;
+  padding: 20px;
 }
-</style>
-</head>
 
-<body>
-
-/* ===== Stock 화면 전용 스타일 ===== */
-
-/* Stock 제목 */
+/* ===== Stock 화면 글자 크기 통일 ===== */
 #content h2 {
-  font-size: 22px;   /* 지금 STOCK 제목 크기 유지 */
+  font-size: 22px;   /* Stock 제목 크기 */
   margin-bottom: 12px;
 }
 
-/* 입력창, 버튼 글자 크기 통일 */
 #content input,
 #content button {
   font-size: 14px;
   padding: 4px 6px;
 }
 
-/* 테이블 전체 글자 크기 통일 */
-#content table {
+table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 14px;
+  margin-top: 10px;
 }
 
-#content th {
-  font-size: 14px;
-  font-weight: bold;
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px;
+  text-align: left;
 }
+</style>
+</head>
 
-#content td {
-  font-size: 14px;
-}
+<body>
 
+<!-- ===== LOGIN ===== -->
+<div id="loginBox">
+  <h2>HTORI ERP LOGIN</h2>
+  <input id="loginId" placeholder="admin">
+  <input id="loginPw" type="password" placeholder="1234">
+  <button onclick="login()">Login</button>
+</div>
+
+<!-- ===== ERP ===== -->
+<div id="erp" style="display:flex">
+  <div id="sidebar">
+    <div onclick="loadPage('dashboard')">Dashboard</div>
+    <div onclick="loadPage('stock')">Stock</div>
+    <div onclick="loadPage('purchase')">Purchase</div>
+    <div onclick="logout()">Logout</div>
+  </div>
+
+  <div id="content"></div>
+</div>
 
 <script>
+/* ===== 상태 ===== */
 let stockData = [];
 
+/* ===== 로그인 ===== */
 function login() {
   if (loginId.value === "admin" && loginPw.value === "1234") {
     loginBox.style.display = "none";
@@ -92,9 +127,10 @@ function login() {
 
 function logout() {
   erp.style.display = "none";
-  loginBox.style.display = "flex";
+  loginBox.style.display = "block";
 }
 
+/* ===== 페이지 로딩 ===== */
 function loadPage(page) {
   if (page === "dashboard") {
     content.innerHTML = `
@@ -131,6 +167,7 @@ function loadPage(page) {
   }
 }
 
+/* ===== Stock ===== */
 function addStock() {
   const code = sCode.value;
   const name = sName.value;
