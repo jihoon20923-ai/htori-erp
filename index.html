@@ -76,13 +76,20 @@ table {
 th, td {
   border: 1px solid #ccc;
   padding: 6px;
+  text-align: left;
+}
+
+button.small {
+  font-size: 12px;
+  padding: 2px 6px;
+  margin-right: 4px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- ===== LOGIN ===== -->
+<!-- LOGIN -->
 <div id="loginBox">
   <div class="login-card">
     <h2>HTORI ERP LOGIN</h2>
@@ -92,7 +99,7 @@ th, td {
   </div>
 </div>
 
-<!-- ===== ERP ===== -->
+<!-- ERP -->
 <div id="erp">
   <div class="sidebar">
     <div onclick="loadPage('dashboard')">Dashboard</div>
@@ -106,13 +113,10 @@ th, td {
 <script>
 /* ===== LOGIN ===== */
 function login() {
-  const id = document.getElementById("loginId").value;
-  const pw = document.getElementById("loginPw").value;
-
-  if (id === "admin" && pw === "1234") {
+  if (loginId.value === "admin" && loginPw.value === "1234") {
     localStorage.setItem("htori_login", "Y");
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("erp").style.display = "block";
+    loginBox.style.display = "none";
+    erp.style.display = "block";
     loadPage("dashboard");
   } else {
     alert("Login failed");
@@ -121,15 +125,15 @@ function login() {
 
 function logout() {
   localStorage.removeItem("htori_login");
-  document.getElementById("erp").style.display = "none";
-  document.getElementById("loginBox").style.display = "flex";
+  erp.style.display = "none";
+  loginBox.style.display = "flex";
 }
 
-/* ===== AUTO LOGIN ===== */
+/* AUTO LOGIN */
 window.onload = function () {
   if (localStorage.getItem("htori_login") === "Y") {
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("erp").style.display = "block";
+    loginBox.style.display = "none";
+    erp.style.display = "block";
     loadPage("dashboard");
   }
 };
@@ -157,6 +161,7 @@ function loadPage(page) {
             <th>Code</th>
             <th>Name</th>
             <th>Qty</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody id="stockBody"></tbody>
@@ -178,17 +183,23 @@ function saveStock(data) {
 function loadStock() {
   const data = getStock();
   stockBody.innerHTML = "";
-  data.forEach(item => {
+
+  data.forEach((item, index) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${item.code}</td>
       <td>${item.name}</td>
       <td>${item.qty}</td>
+      <td>
+        <button class="small" onclick="editStock(${index})">Edit</button>
+        <button class="small" onclick="deleteStock(${index})">Del</button>
+      </td>
     `;
     stockBody.appendChild(tr);
   });
 }
 
+/* ===== ADD / UPDATE ===== */
 function addStock() {
   const code = sCode.value.trim();
   const name = sName.value.trim();
@@ -214,6 +225,30 @@ function addStock() {
   sCode.value = "";
   sName.value = "";
   sQty.value = "";
+}
+
+/* ===== EDIT ===== */
+function editStock(index) {
+  const data = getStock();
+  const item = data[index];
+
+  sCode.value = item.code;
+  sName.value = item.name;
+  sQty.value = item.qty;
+
+  data.splice(index, 1);   // 기존 데이터 제거
+  saveStock(data);
+  loadStock();
+}
+
+/* ===== DELETE ===== */
+function deleteStock(index) {
+  if (!confirm("Delete this item?")) return;
+
+  const data = getStock();
+  data.splice(index, 1);
+  saveStock(data);
+  loadStock();
 }
 </script>
 
