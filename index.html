@@ -15,28 +15,29 @@ body {
 #loginBox {
   width: 320px;
   margin: 120px auto;
+  text-align: center;
 }
 
 #loginBox h2 {
   font-size: 22px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 #loginBox input {
   width: 100%;
   font-size: 14px;
-  padding: 5px;
+  padding: 6px;
   margin-bottom: 6px;
 }
 
 #loginBox button {
   font-size: 14px;
-  padding: 5px 10px;
+  padding: 6px 12px;
 }
 
 /* ===== ERP 레이아웃 ===== */
 #erp {
-  display: none;
+  display: none;       /* ★ 중요 */
   height: 100vh;
 }
 
@@ -49,7 +50,7 @@ body {
 #sidebar div {
   padding: 12px;
   cursor: pointer;
-  font-size: 14px; /* ← 주메뉴 글씨 크기 고정 */
+  font-size: 14px;
 }
 
 #sidebar div:hover {
@@ -61,9 +62,9 @@ body {
   padding: 20px;
 }
 
-/* ===== Stock 화면 글자 크기 통일 ===== */
+/* ===== Stock ===== */
 #content h2 {
-  font-size: 22px;   /* Stock 제목 크기 */
+  font-size: 22px;
   margin-bottom: 12px;
 }
 
@@ -83,7 +84,6 @@ table {
 th, td {
   border: 1px solid #ccc;
   padding: 6px;
-  text-align: left;
 }
 </style>
 </head>
@@ -99,30 +99,27 @@ th, td {
 </div>
 
 <!-- ===== ERP ===== -->
-#erp {
-  display: none;
-  height: 100vh;
-}
-
-  <div id="sidebar">
-    <div onclick="loadPage('dashboard')">Dashboard</div>
-    <div onclick="loadPage('stock')">Stock</div>
-    <div onclick="loadPage('purchase')">Purchase</div>
-    <div onclick="logout()">Logout</div>
+<div id="erp">
+  <div style="display:flex;height:100%">
+    <div id="sidebar">
+      <div onclick="loadPage('dashboard')">Dashboard</div>
+      <div onclick="loadPage('stock')">Stock</div>
+      <div onclick="loadPage('purchase')">Purchase</div>
+      <div onclick="logout()">Logout</div>
+    </div>
+    <div id="content"></div>
   </div>
-
-  <div id="content"></div>
 </div>
 
 <script>
-/* ===== 상태 ===== */
+/* ===== 데이터 ===== */
 let stockData = [];
 
 /* ===== 로그인 ===== */
 function login() {
   if (loginId.value === "admin" && loginPw.value === "1234") {
-    loginBox.style.display = "none";
-    erp.style.display = "flex";
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("erp").style.display = "block";
     loadPage("dashboard");
   } else {
     alert("Login failed");
@@ -130,12 +127,14 @@ function login() {
 }
 
 function logout() {
-  erp.style.display = "none";
-  loginBox.style.display = "block";
+  document.getElementById("erp").style.display = "none";
+  document.getElementById("loginBox").style.display = "block";
 }
 
-/* ===== 페이지 로딩 ===== */
+/* ===== 페이지 ===== */
 function loadPage(page) {
+  const content = document.getElementById("content");
+
   if (page === "dashboard") {
     content.innerHTML = `
       <h2>Dashboard</h2>
@@ -173,9 +172,9 @@ function loadPage(page) {
 
 /* ===== Stock ===== */
 function addStock() {
-  const code = sCode.value;
-  const name = sName.value;
-  const qty = Number(sQty.value);
+  const code = document.getElementById("sCode").value;
+  const name = document.getElementById("sName").value;
+  const qty = Number(document.getElementById("sQty").value);
 
   if (!code || !name || !qty) {
     alert("Fill all fields");
@@ -185,9 +184,9 @@ function addStock() {
   stockData.push({ code, name, qty });
   renderStock();
 
-  sCode.value = "";
-  sName.value = "";
-  sQty.value = "";
+  document.getElementById("sCode").value = "";
+  document.getElementById("sName").value = "";
+  document.getElementById("sQty").value = "";
 }
 
 function renderStock() {
