@@ -1,61 +1,43 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <title>HTORI ERP - STOCK</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { margin:0; font-family: Arial, sans-serif; background:#f5f6f8; }
-    header { background:#1f3c88; color:#fff; padding:14px 20px; font-size:18px; }
-    .wrap { display:flex; }
-    aside {
-      width:180px; background:#111; color:#fff; min-height:100vh;
-      padding:10px;
-    }
-    aside button {
-      width:100%; margin-bottom:8px; padding:10px;
-      background:#222; color:#fff; border:0; cursor:pointer;
-    }
-    main { flex:1; padding:20px; }
-    h2 { margin-top:0; }
-    .card {
-      background:#fff; padding:16px; border-radius:6px;
-      max-width:520px;
-    }
-    label { display:block; margin-top:10px; font-weight:bold; }
-    input, button {
-      width:100%; padding:8px; margin-top:4px;
-    }
-    table {
-      margin-top:20px; width:100%;
-      border-collapse:collapse; background:#fff;
-    }
-    th, td {
-      border:1px solid #ddd; padding:8px; text-align:left;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>HTORI ERP - STOCK</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+body{margin:0;font-family:Arial;background:#f5f6f8}
+header{background:#1f3c88;color:#fff;padding:14px 20px;font-size:18px}
+.wrap{display:flex}
+aside{width:180px;background:#111;color:#fff;min-height:100vh;padding:10px}
+aside button{width:100%;margin-bottom:8px;padding:10px;background:#222;color:#fff;border:0;cursor:pointer}
+main{flex:1;padding:20px}
+.card{background:#fff;padding:16px;border-radius:6px;max-width:560px}
+label{display:block;margin-top:10px;font-weight:bold}
+input,select,button{width:100%;padding:8px;margin-top:4px}
+table{margin-top:20px;width:100%;border-collapse:collapse;background:#fff}
+th,td{border:1px solid #ddd;padding:8px}
+.small{font-size:12px;color:#666}
+</style>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
-<body>
 
+<body>
 <header>HTORI ERP · STOCK</header>
 
 <div class="wrap">
   <aside>
-    <button onclick="showPurchase()">Purchase (입고)</button>
+    <button onclick="showPurchase()">Purchase</button>
     <button onclick="showStock()">Stock</button>
+    <button onclick="showDefect()">Defect</button>
+    <button onclick="loginMaster()">Login Master</button>
   </aside>
-
   <main id="content"></main>
 </div>
 
 <script>
-/* ===============================
-   Firebase (38ed1)
-================================ */
+/* ================= Firebase ================= */
 firebase.initializeApp({
   apiKey: "YOUR_API_KEY",
   authDomain: "htori-erp-38ed1.firebaseapp.com",
@@ -64,97 +46,143 @@ firebase.initializeApp({
 });
 const db = firebase.database();
 
-/* ===============================
-   UI
-================================ */
-function showPurchase() {
-  document.getElementById("content").innerHTML = `
-    <h2>Purchase (입고)</h2>
-    <div class="card">
-      <label>Date</label>
-      <input id="p_date" type="date" value="${new Date().toISOString().slice(0,10)}">
+/* ================= STATE ================= */
+let isMaster = false;
 
-      <label>Code</label>
-      <input id="p_code" placeholder="M001">
-
-      <label>Name</label>
-      <input id="p_name" placeholder="Material name">
-
-      <label>Qty</label>
-      <input id="p_qty" type="number" placeholder="0">
-
-      <button onclick="savePurchase()">Save Purchase</button>
-    </div>
-  `;
-}
-
-function showStock() {
-  document.getElementById("content").innerHTML = `
-    <h2>Stock</h2>
-    <table>
-      <thead>
-        <tr><th>Code</th><th>Name</th><th>Qty</th></tr>
-      </thead>
-      <tbody id="stockBody"></tbody>
-    </table>
-  `;
-  loadStock();
-}
-
-/* ===============================
-   Logic
-================================ */
-function savePurchase() {
-  const date = p_date.value;
-  const code = p_code.value.trim();
-  const name = p_name.value.trim();
-  const qty  = Number(p_qty.value);
-
-  if (!code || !qty) {
-    alert("Code / Qty required");
-    return;
+/* ================= LOGIN ================= */
+function loginMaster(){
+  const pw = prompt("Master Password?");
+  if(pw === "1234"){
+    isMaster = true;
+    alert("Master Mode ON");
+    showStock();
+  } else {
+    alert("Wrong password");
   }
+}
 
-  // 1) 입고 로그 저장
+/* ================= PURCHASE ================= */
+function showPurchase(){
+  content.innerHTML = `
+  <h2>Purchase (입고)</h2>
+  <div class="card">
+    <label>Date</label>
+    <input id="p_date" type="date" value="${new Date().toISOString().slice(0,10)}">
+
+    <label>Code</label>
+    <input id="p_code">
+
+    <label>Name</label>
+    <input id="p_name">
+
+    <label>Qty</label>
+    <input id="p_qty" type="number">
+
+    <label>Unit Price</label>
+    <input id="p_price" type="number" step="0.0001">
+
+    <label>Currency</label>
+    <select id="p_cur">
+      <option>USD</option>
+      <option>IDR</option>
+    </select>
+
+    <button onclick="savePurchase()">Save</button>
+  </div>`;
+}
+
+function savePurchase(){
+  const d=p_date.value,c=p_code.value.trim(),n=p_name.value.trim();
+  const q=+p_qty.value,p=+p_price.value,cur=p_cur.value;
+  if(!c||!q) return alert("Code / Qty required");
+
   db.ref("purchase").push({
-    date, code, name, qty
+    date:d,code:c,name:n,qty:q,price:p,currency:cur,total:q*p
   });
 
-  // 2) 재고 증가
-  db.ref("stock/" + code).once("value").then(snap => {
-    const cur = snap.val();
-    const newQty = (cur?.qty || 0) + qty;
-
-    db.ref("stock/" + code).set({
-      code,
-      name: name || cur?.name || "",
-      qty: newQty
+  db.ref("stock/"+c).once("value").then(s=>{
+    const v=s.val();
+    db.ref("stock/"+c).set({
+      code:c,
+      name:n||v?.name||"",
+      qty:(v?.qty||0)+q
     });
   });
 
   alert("Saved");
-  p_code.value = p_name.value = p_qty.value = "";
 }
 
-function loadStock() {
-  db.ref("stock").once("value").then(snap => {
-    const body = document.getElementById("stockBody");
-    body.innerHTML = "";
-    const data = snap.val() || {};
-    Object.values(data).forEach(r => {
-      body.innerHTML += `
-        <tr>
-          <td>${r.code}</td>
-          <td>${r.name}</td>
-          <td>${r.qty}</td>
-        </tr>`;
+/* ================= STOCK ================= */
+function showStock(){
+  content.innerHTML = `
+  <h2>Stock</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Code</th><th>Name</th><th>Qty</th>
+        ${isMaster?'<th>Action</th>':''}
+      </tr>
+    </thead>
+    <tbody id="stockBody"></tbody>
+  </table>`;
+  loadStock();
+}
+
+function loadStock(){
+  db.ref("stock").once("value").then(s=>{
+    const body=stockBody; body.innerHTML="";
+    Object.values(s.val()||{}).forEach(r=>{
+      body.innerHTML+=`
+      <tr>
+        <td>${r.code}</td>
+        <td>${r.name}</td>
+        <td>${r.qty}</td>
+        ${isMaster?`
+        <td>
+          <button onclick="editStock('${r.code}',${r.qty})">Edit</button>
+          <button onclick="delStock('${r.code}')">Del</button>
+        </td>`:""}
+      </tr>`;
     });
+  });
+}
+
+function editStock(code,qty){
+  const n=prompt("New Qty",qty);
+  if(n!==null) db.ref("stock/"+code+"/qty").set(+n);
+}
+
+function delStock(code){
+  if(confirm("Delete?")) db.ref("stock/"+code).remove();
+}
+
+/* ================= DEFECT ================= */
+function showDefect(){
+  content.innerHTML=`
+  <h2>Defect</h2>
+  <div class="card">
+    <label>Code</label>
+    <input id="d_code">
+    <label>Qty</label>
+    <input id="d_qty" type="number">
+    <button onclick="saveDefect()">Save Defect</button>
+  </div>`;
+}
+
+function saveDefect(){
+  const c=d_code.value.trim(),q=+d_qty.value;
+  if(!c||!q) return alert("Required");
+
+  db.ref("stock/"+c).once("value").then(s=>{
+    if(!s.exists()||s.val().qty<q) return alert("Not enough stock");
+    db.ref("stock/"+c+"/qty").set(s.val().qty-q);
+    db.ref("defect").push({code:c,qty:q,date:new Date().toISOString()});
+    alert("Defect saved");
   });
 }
 
 /* start */
 showPurchase();
 </script>
-
 </body>
 </html>
