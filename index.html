@@ -5,6 +5,7 @@
 <title>HTORI ERP - STOCK BASIC</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+
 <style>
 body {
   font-family: Arial, sans-serif;
@@ -63,25 +64,40 @@ th, td {
 <input id="p_qty" type="number">
 
 <button onclick="savePurchase()">Save Purchase</button>
-
+<button onclick="loginMaster()">Login Master</button>
 <h2>Stock</h2>
 
-<table>
-<thead>
-<tr>
-<th>Code</th>
-<th>Name</th>
-<th>Qty</th>
-</tr>
-</thead>
-<tbody id="stockBody"></tbody>
+<table border="1" width="100%">
+  <thead>
+    <tr>
+      <th>Code</th>
+      <th>Name</th>
+      <th>Qty</th>
+    </tr>
+  </thead>
+  <tbody id="stockBody"></tbody>
 </table>
+
 
 </div>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script>
+let isMaster = false;   // ★ 이 줄 추가
+
+  function loginMaster() {
+  const pw = prompt("Master Password");
+
+  if (pw === "1234") {   // ← 지금은 임시 비밀번호
+    isMaster = true;
+    alert("Master Login OK");
+    showStock();         // 화면 다시 그림
+  } else {
+    alert("Wrong password");
+  }
+}
 
 <script>
 const firebaseConfig = {
@@ -133,27 +149,29 @@ function savePurchase(){
   showStock();
 }
 
-/* 재고 표시 */
-function showStock(){
-  db.ref("stock").once("value").then(snap=>{
-    const body = document.getElementById("stockBody");
-    body.innerHTML = "";
+/* 재고 블러오기 */
+function showStock() {
+  const body = document.getElementById("stockBody");
+  body.innerHTML = "";
 
-    snap.forEach(row=>{
-      const v = row.val();
-      body.innerHTML += `
-        <tr>
-          <td>${v.code}</td>
-          <td>${v.name}</td>
-          <td>${v.qty}</td>
-        </tr>
+  db.ref("stock").once("value").then(snapshot => {
+    snapshot.forEach(child => {
+      const s = child.val();
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${s.code}</td>
+        <td>${s.name}</td>
+        <td>${s.qty}</td>
       `;
+      body.appendChild(tr);
     });
   });
 }
 
 showStock();
 </script>
+
 
 </body>
 </html>
