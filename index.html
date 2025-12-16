@@ -1,97 +1,42 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>HTORI ERP - STOCK</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<style>
-body { margin:0; font-family:Arial; }
-header { background:#1f3c88; color:#fff; padding:12px; }
-.layout { display:flex; height:calc(100vh - 48px); }
-nav { width:200px; background:#111; color:#fff; padding:10px; }
-nav button {
-  width:100%; margin-bottom:6px; padding:8px;
-  background:#333; color:#fff; border:0; cursor:pointer;
-}
-main { flex:1; padding:16px; }
-table { border-collapse:collapse; width:100%; }
-th,td { border:1px solid #ccc; padding:8px; text-align:left; }
-</style>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-</head>
-
-<body>
-
-<header>
-  <h3>HTORI ERP - STOCK</h3>
-</header>
-
-<div class="layout">
-  <nav>
-    <button onclick="showStock()">Stock</button>
-  </nav>
-
-  <main id="content">
-    <h2>Loading...</h2>
-  </main>
-</div>
-
 <script>
-/* 🔹 Firebase 설정 (38ed1) */
-firebase.initializeApp({
-  apiKey: "AIzaSyDwiTlPtoXraEtA7TzTctdH6DJS6gdSEGQ",
-  authDomain: "htori-erp-38ed1.firebaseapp.com",
-  databaseURL: "https://htori-erp-38ed1-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "htori-erp-38ed1"
-});
-const db = firebase.database();
+function savePurchase(){
 
-/* 🔹 STOCK 화면 */
-function showStock(){
-  document.getElementById("content").innerHTML = `
-    <h2>Stock</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Code</th>
-          <th>Name</th>
-          <th>Qty</th>
-        </tr>
-      </thead>
-      <tbody id="stockBody">
-        <tr><td colspan="3">Loading...</td></tr>
-      </tbody>
-    </table>
-  `;
+  const date = document.getElementById("p_date").value;
+  const code = document.getElementById("p_code").value.trim();
+  const name = document.getElementById("p_name").value.trim();
+  const qty  = Number(document.getElementById("p_qty").value);
 
-  db.ref("stock").once("value").then(snap=>{
-    const body = document.getElementById("stockBody");
-    body.innerHTML = "";
+  if(!code || !qty){
+    alert("Code / Qty required");
+    return;
+  }
 
-    if(!snap.exists()){
-      body.innerHTML = `<tr><td colspan="3">No Data</td></tr>`;
-      return;
+  /* 1️⃣ 입고 기록 저장 */
+  db.ref("purchase").push({
+    date: date,
+    code: code,
+    name: name,
+    qty: qty
+  });
+
+  /* 2️⃣ 재고 누적 */
+  const stockRef = db.ref("stock/" + code);
+
+  stockRef.once("value").then(snapshot=>{
+    let currentQty = 0;
+
+    if(snapshot.exists()){
+      currentQty = Number(snapshot.val().qty);
     }
 
-    Object.values(snap.val()).forEach(item=>{
-      body.innerHTML += `
-        <tr>
-          <td>${item.code}</td>
-          <td>${item.name}</td>
-          <td>${item.qty}</td>
-        </tr>
-      `;
+    stockRef.set({
+      code: code,
+      name: name,
+      qty: currentQty + qty
     });
   });
+
+  alert("Saved");
+  showStock();
 }
-
-/* 🔹 최초 로딩 */
-showStock();
 </script>
-
-</body>
-</html>
