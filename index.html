@@ -1,135 +1,195 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>HTORI ERP – Step 1</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
+<title>HTORI ERP – Step 2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f5f6f8}
-  .topbar{
-    height:56px;background:#1F3C88;color:#fff;
-    display:flex;align-items:center;justify-content:space-between;
-    padding:0 12px;position:fixed;left:0;right:0;top:0
-  }
-  .brand{font-weight:700}
-  .layout{display:flex;margin-top:56px}
-  .sidebar{
-    width:200px;background:#111;color:#fff;min-height:calc(100vh - 56px);
-    padding:10px
-  }
-  .sidebar button{
-    width:100%;padding:10px;margin-bottom:6px;border:0;border-radius:6px;
-    background:#222;color:#fff;cursor:pointer;text-align:left
-  }
-  .sidebar button.active{background:#444}
-  .content{flex:1;padding:16px}
-  .card{background:#fff;border-radius:8px;padding:12px;margin-bottom:12px}
-  .muted{color:#666}
+body{margin:0;font-family:Arial;background:#f5f6f8}
+.topbar{height:56px;background:#1F3C88;color:#fff;display:flex;align-items:center;padding:0 16px}
+.layout{display:flex}
+.sidebar{width:200px;background:#111;color:#fff;min-height:calc(100vh - 56px);padding:10px}
+.sidebar button{width:100%;padding:10px;margin-bottom:6px;border:0;border-radius:6px;background:#222;color:#fff;cursor:pointer;text-align:left}
+.sidebar button.active{background:#444}
+.content{flex:1;padding:16px}
+.card{background:#fff;padding:12px;border-radius:8px;margin-bottom:12px}
+input,select,button{padding:6px}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #ccc;padding:6px;text-align:left}
 </style>
 
-<!-- Firebase (v8 – 단순) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 
 <body>
 
-<!-- TOP -->
 <div class="topbar">
-  <div class="brand">HTORI ERP</div>
-  <div class="muted">Step 1</div>
+  <b>HTORI ERP</b>
 </div>
 
-<!-- LAYOUT -->
 <div class="layout">
-  <aside class="sidebar">
-    <button id="m-dashboard" onclick="show('dashboard')">Dashboard</button>
-    <button id="m-purchase" onclick="show('purchase')">Purchase</button>
-    <button id="m-stock" onclick="show('stock')">Stock</button>
-  </aside>
+  <div class="sidebar">
+    <button onclick="show('dashboard')" id="m-dashboard">Dashboard</button>
+    <button onclick="show('purchase')" id="m-purchase">Purchase</button>
+    <button onclick="show('stock')" id="m-stock">Stock</button>
+  </div>
 
-  <main id="content" class="content"></main>
+  <div class="content">
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="page">
+      <div class="card">
+        <h2>Dashboard</h2>
+        <p>Step 2 – Purchase → Stock</p>
+      </div>
+    </div>
+
+    <!-- PURCHASE -->
+    <div id="purchase" class="page" style="display:none">
+      <div class="card">
+        <h2>Purchase (입고)</h2>
+
+        <input type="date" id="p_date"><br><br>
+
+        <select id="p_type">
+          <option value="Container">Container</option>
+          <option value="Air">Air</option>
+        </select><br><br>
+
+        <input id="p_code" placeholder="Code"><br><br>
+        <input id="p_name" placeholder="Name"><br><br>
+
+        <input id="p_qty" type="number" placeholder="Qty"><br><br>
+        <input id="p_price" type="number" step="0.0001" placeholder="Unit Price"><br><br>
+
+        <select id="p_currency">
+          <option value="USD">USD</option>
+          <option value="IDR">IDR</option>
+        </select><br><br>
+
+        <input id="p_memo" placeholder="Memo"><br><br>
+
+        <button onclick="addPurchase()">Save Purchase</button>
+      </div>
+    </div>
+
+    <!-- STOCK -->
+    <div id="stock" class="page" style="display:none">
+      <div class="card">
+        <h2>Stock (조회 전용)</h2>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Name</th>
+              <th>Qty</th>
+              <th>Avg Price</th>
+              <th>Currency</th>
+            </tr>
+          </thead>
+          <tbody id="stockBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-/* ===============================
-   Firebase 설정 (당신의 프로젝트)
-================================ */
+/* ================= Firebase ================= */
 firebase.initializeApp({
   apiKey: "AIzaSyDwiTlPtoXraEtA7TzTctdH6DJS6gdSEGQ",
-  authDomain: "htori-erp-3c22b.firebaseapp.com",
-  databaseURL: "https://htori-erp-3c22b-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "htori-erp-3c22b"
+  databaseURL: "https://htori-erp-3c22b-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
 const db = firebase.database();
 
-/* ===============================
-   메뉴/페이지
-================================ */
-function setActive(id){
-  document.querySelectorAll(".sidebar button")
-    .forEach(b=>b.classList.remove("active"));
-  document.getElementById("m-"+id).classList.add("active");
-}
-
+/* ================= Menu ================= */
 function show(page){
-  setActive(page);
-  if(page==="dashboard") renderDashboard();
-  if(page==="purchase") renderPurchase();
-  if(page==="stock") renderStock();
-}
+  document.querySelectorAll(".page").forEach(p=>p.style.display="none");
+  document.getElementById(page).style.display="block";
 
-/* ===============================
-   Pages (아직 기능 없음)
-================================ */
-function renderDashboard(){
-  content.innerHTML = `
-    <div class="card">
-      <h2>Dashboard</h2>
-      <p class="muted">Step 1: 화면/메뉴/Firebase 연결 확인</p>
-      <button onclick="testFirebase()">Firebase Test</button>
-      <div id="fbResult" class="muted"></div>
-    </div>
-  `;
-}
+  document.querySelectorAll(".sidebar button").forEach(b=>b.classList.remove("active"));
+  document.getElementById("m-"+page).classList.add("active");
 
-function renderPurchase(){
-  content.innerHTML = `
-    <div class="card">
-      <h2>Purchase</h2>
-      <p class="muted">다음 단계에서 입고 기능이 들어옵니다.</p>
-    </div>
-  `;
+  if(page==="stock") loadStock();
 }
-
-function renderStock(){
-  content.innerHTML = `
-    <div class="card">
-      <h2>Stock</h2>
-      <p class="muted">다음 단계에서 재고 테이블이 들어옵니다.</p>
-    </div>
-  `;
-}
-
-/* ===============================
-   Firebase 연결 테스트
-================================ */
-function testFirebase(){
-  const ref = db.ref("test");
-  ref.set({ ok:true, at:new Date().toISOString() })
-    .then(()=>ref.once("value"))
-    .then(snap=>{
-      fbResult.innerText =
-        "Firebase OK: " + JSON.stringify(snap.val());
-    })
-    .catch(e=>{
-      fbResult.innerText = "Firebase ERROR";
-      console.error(e);
-    });
-}
-
-/* 초기 화면 */
 show("dashboard");
+
+/* ================= Purchase ================= */
+function addPurchase(){
+  const date = p_date.value;
+  const type = p_type.value;
+  const code = p_code.value.trim();
+  const name = p_name.value.trim();
+  const qty = Number(p_qty.value);
+  const price = Number(p_price.value);
+  const currency = p_currency.value;
+  const memo = p_memo.value.trim();
+
+  if(!date || !code || !qty || !price){
+    alert("필수값 누락");
+    return;
+  }
+
+  const data = {
+    date,type,code,name,qty,
+    unit_price:price,currency,memo,
+    createdAt:Date.now()
+  };
+
+  db.ref("purchase").push(data);
+
+  const stockRef = db.ref("stock/"+code);
+  stockRef.once("value").then(s=>{
+    if(s.exists()){
+      const v = s.val();
+      const newQty = v.qty + qty;
+      const newAvg = ((v.qty*v.avg_price)+(qty*price))/newQty;
+      stockRef.update({
+        name,
+        qty:newQty,
+        avg_price:Number(newAvg.toFixed(6)),
+        currency,
+        updatedAt:Date.now()
+      });
+    }else{
+      stockRef.set({
+        code,name,qty,
+        avg_price:price,
+        currency,
+        createdAt:Date.now()
+      });
+    }
+  });
+
+  alert("입고 완료");
+}
+
+/* ================= Stock ================= */
+function loadStock(){
+  const tbody = document.getElementById("stockBody");
+  tbody.innerHTML = "";
+
+  db.ref("stock").once("value").then(snap=>{
+    if(!snap.exists()){
+      tbody.innerHTML = `<tr><td colspan="5">No data</td></tr>`;
+      return;
+    }
+    snap.forEach(c=>{
+      const s=c.val();
+      tbody.innerHTML+=`
+        <tr>
+          <td>${s.code}</td>
+          <td>${s.name}</td>
+          <td>${s.qty}</td>
+          <td>${s.avg_price}</td>
+          <td>${s.currency}</td>
+        </tr>`;
+    });
+  });
+}
 </script>
+
 </body>
 </html>
