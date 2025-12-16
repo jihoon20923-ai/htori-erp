@@ -84,16 +84,17 @@ th, td {
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-/* 🔴 여기 Firebase 설정만 네 프로젝트로 바꿔 */
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "htori-erp-38ed1.firebaseapp.com",
-  databaseURL: "https://htori-erp-38ed1-default-rtdb.firebaseio.com",
+  databaseURL: "https://htori-erp-38ed1-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "htori-erp-38ed1",
 };
-firebase.initializeApp(firebaseConfig);
 
+firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+</script>
+
 
 /* 입고 저장 */
 function savePurchase(){
