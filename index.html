@@ -1,4 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HTORI ERP - STOCK BASIC</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+}
+header {
+  background:#1f3c88;
+  color:#fff;
+  padding:12px;
+  font-size:18px;
+}
+.container {
+  padding:20px;
+  max-width:600px;
+}
+label {
+  display:block;
+  margin-top:12px;
+}
+input, button {
+  width:100%;
+  padding:8px;
+  margin-top:4px;
+}
+table {
+  width:100%;
+  margin-top:20px;
+  border-collapse: collapse;
+}
+th, td {
+  border:1px solid #ccc;
+  padding:8px;
+  text-align:left;
+}
+</style>
+</head>
+
+<body>
+
+<header>HTORI ERP – STOCK (STEP 1)</header>
+
+<div class="container">
+
+<h2>Purchase (입고)</h2>
+
+<label>Date</label>
+<input type="date" id="p_date">
+
+<label>Code</label>
+<input id="p_code" placeholder="A12">
+
+<label>Name</label>
+<input id="p_name" placeholder="Carton Box">
+
+<label>Qty</label>
+<input id="p_qty" type="number">
+
+<button onclick="savePurchase()">Save Purchase</button>
+
+<h2>Stock</h2>
+
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Name</th>
+<th>Qty</th>
+</tr>
+</thead>
+<tbody id="stockBody"></tbody>
+</table>
+
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
 <script>
+/* 🔴 여기 Firebase 설정만 네 프로젝트로 바꿔 */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "htori-erp-38ed1.firebaseapp.com",
+  databaseURL: "https://htori-erp-38ed1-default-rtdb.firebaseio.com",
+  projectId: "htori-erp-38ed1",
+};
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.database();
+
+/* 입고 저장 */
 function savePurchase(){
 
   const date = document.getElementById("p_date").value;
@@ -11,32 +108,52 @@ function savePurchase(){
     return;
   }
 
-  /* 1️⃣ 입고 기록 저장 */
+  /* 1. 입고 기록 */
   db.ref("purchase").push({
-    date: date,
-    code: code,
-    name: name,
-    qty: qty
+    date, code, name, qty
   });
 
-  /* 2️⃣ 재고 누적 */
+  /* 2. 재고 누적 */
   const stockRef = db.ref("stock/" + code);
 
-  stockRef.once("value").then(snapshot=>{
-    let currentQty = 0;
-
-    if(snapshot.exists()){
-      currentQty = Number(snapshot.val().qty);
+  stockRef.once("value").then(snap=>{
+    let current = 0;
+    if(snap.exists()){
+      current = Number(snap.val().qty);
     }
 
     stockRef.set({
       code: code,
       name: name,
-      qty: currentQty + qty
+      qty: current + qty
     });
   });
 
   alert("Saved");
   showStock();
 }
+
+/* 재고 표시 */
+function showStock(){
+  db.ref("stock").once("value").then(snap=>{
+    const body = document.getElementById("stockBody");
+    body.innerHTML = "";
+
+    snap.forEach(row=>{
+      const v = row.val();
+      body.innerHTML += `
+        <tr>
+          <td>${v.code}</td>
+          <td>${v.name}</td>
+          <td>${v.qty}</td>
+        </tr>
+      `;
+    });
+  });
+}
+
+showStock();
 </script>
+
+</body>
+</html>
