@@ -1,89 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>HTORI ERP - STOCK ONLY</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<title>HTORI ERP - STOCK</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    body { margin:0; font-family:Arial }
-    header { background:#1f3c88; color:#fff; padding:12px }
-    .wrap { display:flex; height:100vh }
-    nav { width:200px; background:#111; color:#fff; padding:10px }
-    nav button { width:100%; margin-bottom:6px; padding:8px }
-    main { flex:1; padding:20px }
-    table { width:100%; border-collapse:collapse }
-    th, td { border:1px solid #ccc; padding:6px }
-    input, select { padding:6px; margin-bottom:6px; width:100% }
-  </style>
+<style>
+body { margin:0; font-family:Arial }
+header { background:#1f3c88; color:#fff; padding:12px }
+.wrap { display:flex; height:100vh }
+nav { width:180px; background:#111; padding:10px }
+nav button { width:100%; margin-bottom:6px; padding:8px; color:#fff; background:#333; border:none }
+main { flex:1; padding:20px }
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+.form-box { max-width:480px }
+label { font-size:14px }
+input { width:100%; padding:6px; margin-bottom:8px }
+
+table { border-collapse:collapse; width:100% }
+th, td { border:1px solid #ccc; padding:6px }
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 
 <body>
 
-<header>
-  HTORI ERP (STOCK)
-</header>
+<header>HTORI ERP (STOCK)</header>
 
 <div class="wrap">
-  <nav>
-    <button onclick="showPurchase()">Purchase</button>
-    <button onclick="showStock()">Stock</button>
-    <button onclick="loginMaster()">Login Master</button>
-  </nav>
+<nav>
+  <button onclick="showPurchase()">Purchase</button>
+  <button onclick="showStock()">Stock</button>
+</nav>
 
-  <main id="content"></main>
+<main id="content"></main>
 </div>
 
 <script>
-/* ===============================
-   Firebase 설정
-================================ */
+// 🔴 Firebase 설정 (여기 꼭 교체)
 firebase.initializeApp({
   apiKey: "YOUR_API_KEY",
-  databaseURL: "YOUR_DB_URL"
+  authDomain: "YOUR_DOMAIN",
+  databaseURL: "YOUR_DB_URL",
+  projectId: "YOUR_PROJECT_ID"
 });
 const db = firebase.database();
 
-/* ===============================
-   로그인 상태
-================================ */
-let role = "viewer"; // viewer | master
-
-function loginMaster(){
-  const pw = prompt("MASTER PASSWORD");
-  if(pw === "1234"){
-    role = "master";
-    alert("MASTER 로그인 완료");
-    showStock();
-  } else {
-    alert("비밀번호 틀림");
-  }
-}
-
-/* ===============================
-   Purchase (입고)
-================================ */
+// ================== Purchase ==================
 function showPurchase(){
-  document.getElementById("content").innerHTML = `
+  content.innerHTML = `
     <h2>Purchase (입고)</h2>
+    <div class="form-box">
+      <label>Date</label>
+      <input id="p_date" type="date">
 
-    <label>Date</label>
-    <input id="p_date" type="date">
+      <label>Code</label>
+      <input id="p_code">
 
-    <label>Code</label>
-    <input id="p_code">
+      <label>Name</label>
+      <input id="p_name">
 
-    <label>Name</label>
-    <input id="p_name">
+      <label>Qty</label>
+      <input id="p_qty" type="number">
 
-    <label>Qty</label>
-    <input id="p_qty" type="number">
-
-    <button onclick="savePurchase()">Save Purchase</button>
+      <button onclick="savePurchase()">Save Purchase</button>
+    </div>
   `;
 }
 
@@ -92,7 +75,7 @@ function savePurchase(){
   const name = p_name.value.trim();
   const qty  = Number(p_qty.value);
 
-  if(!code || qty <= 0){
+  if(!code || qty<=0){
     alert("입력 오류");
     return;
   }
@@ -100,65 +83,28 @@ function savePurchase(){
   db.ref("stock/"+code).once("value").then(s=>{
     const cur = s.val()?.qty || 0;
     db.ref("stock/"+code).set({
-      code, name,
-      qty: cur + qty
+      code, name, qty: cur + qty
+    }).then(()=>{
+      alert("입고 저장 완료");
+      showStock();
     });
-    alert("입고 완료");
-    showStock();
   });
 }
 
-/* ===============================
-   Stock (조회)
-================================ */
+// ================== Stock ==================
 function showStock(){
-  document.getElementById("content").innerHTML = `
-    <h2>Stock</h2>
-    <div id="stockTable">Loading...</div>
-  `;
-
+  content.innerHTML = `<h2>Stock</h2><div id="tbl">Loading...</div>`;
   db.ref("stock").once("value").then(s=>{
-    const data = s.val() || {};
-    let html = `
-      <table>
-        <tr>
-          <th>Code</th>
-          <th>Name</th>
-          <th>Qty</th>
-          <th>Action</th>
-        </tr>
-    `;
-
-    Object.entries(data).forEach(([key,v])=>{
-      html += `
-        <tr>
-          <td>${v.code}</td>
-          <td>${v.name}</td>
-          <td>${v.qty}</td>
-          <td>
-            ${role==="master"
-              ? `<button onclick="delStock('${key}')">DEL</button>`
-              : `-`
-            }
-          </td>
-        </tr>
-      `;
+    const d = s.val()||{};
+    let html = `<table><tr><th>Code</th><th>Name</th><th>Qty</th></tr>`;
+    Object.values(d).forEach(v=>{
+      html+=`<tr><td>${v.code}</td><td>${v.name}</td><td>${v.qty}</td></tr>`;
     });
-
-    html += "</table>";
-    document.getElementById("stockTable").innerHTML = html;
+    html+=`</table>`;
+    tbl.innerHTML = html;
   });
 }
 
-function delStock(key){
-  if(!confirm("삭제?")) return;
-  db.ref("stock/"+key).remove();
-  showStock();
-}
-
-/* ===============================
-   시작 화면
-================================ */
 showPurchase();
 </script>
 
