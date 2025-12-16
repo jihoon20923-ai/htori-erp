@@ -100,17 +100,34 @@ function savePurchase(){
     date:d,code:c,name:n,qty:q,price:p,currency:cur,total:q*p
   });
 
-  db.ref("stock/"+c).once("value").then(s=>{
-    const v=s.val();
-    db.ref("stock/"+c).set({
-      code:c,
-      name:n||v?.name||"",
-      qty:(v?.qty||0)+q
+  db.ref("stock").orderByChild("code").equalTo(c).once("value").then(snap=>{
+  if(snap.exists()){
+    const key = Object.keys(snap.val())[0];
+    const cur = snap.val()[key];
+    db.ref("stock/"+key).update({
+      qty: cur.qty + q,
+      name: n || cur.name
     });
-  });
+  } else {
+    db.ref("stock").push({
+      code: c,
+      name: n,
+      qty: q
+    });
+  }
+});
+
 
   alert("Saved");
 }
+<h3>Purchase History</h3>
+<button onclick="downloadPurchase()">Download CSV</button>
+<table>
+<thead>
+<tr><th>Date</th><th>Code</th><th>Name</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+</thead>
+<tbody id="purchaseList"></tbody>
+</table>
 
 /* ================= STOCK ================= */
 function showStock(){
@@ -147,14 +164,25 @@ function loadStock(){
   });
 }
 
-function editStock(code,qty){
-  const n=prompt("New Qty",qty);
-  if(n!==null) db.ref("stock/"+code+"/qty").set(+n);
+function editStock(code){
+  db.ref("stock").orderByChild("code").equalTo(code).once("value").then(s=>{
+    const key = Object.keys(s.val())[0];
+    const cur = s.val()[key];
+    const n = prompt("New Qty", cur.qty);
+    if(n!==null){
+      db.ref("stock/"+key+"/qty").set(+n);
+    }
+  });
 }
 
 function delStock(code){
-  if(confirm("Delete?")) db.ref("stock/"+code).remove();
+  if(!confirm("Delete?")) return;
+  db.ref("stock").orderByChild("code").equalTo(code).once("value").then(s=>{
+    const key = Object.keys(s.val())[0];
+    db.ref("stock/"+key).remove();
+  });
 }
+
 
 /* ================= DEFECT ================= */
 function showDefect(){
@@ -183,6 +211,37 @@ function saveDefect(){
 
 /* start */
 showPurchase();
+  function loadPurchase(){
+  db.ref("purchase").once("value").then(s=>{
+    purchaseList.innerHTML="";
+    Object.values(s.val()||{}).forEach(r=>{
+      purchaseList.innerHTML+=`
+      <tr>
+        <td>${r.date}</td>
+        <td>${r.code}</td>
+        <td>${r.name}</td>
+        <td>${r.qty}</td>
+        <td>${r.price}</td>
+        <td>${r.total}</td>
+      </tr>`;
+    });
+  });
+}
+
+function downloadPurchase(){
+  db.ref("purchase").once("value").then(s=>{
+    let csv="date,code,name,qty,price,total\n";
+    Object.values(s.val()||{}).forEach(r=>{
+      csv+=`${r.date},${r.code},${r.name},${r.qty},${r.price},${r.total}\n`;
+    });
+    const blob=new Blob([csv]);
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="purchase.csv";
+    a.click();
+  });
+}
+
 </script>
 </body>
 </html>
