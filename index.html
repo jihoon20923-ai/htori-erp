@@ -54,8 +54,53 @@
   </table>
 
 </div>
+function showPurchase() {
+  const body = document.getElementById("purchaseBody");
+  body.innerHTML = "";
+
+  db.ref("purchase").once("value").then(snapshot => {
+    snapshot.forEach(child => {
+      const p = child.val();
+      const key = child.key;
+
+      let action = "";
+      if (isMaster) {
+        action = `<button onclick="deletePurchase('${key}')">Del</button>`;
+      }
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${p.date}</td>
+        <td>${p.code}</td>
+        <td>${p.name || ""}</td>
+        <td>${p.qty}</td>
+        <td>${action}</td>
+      `;
+      body.appendChild(tr);
+    });
+  });
+}
+function downloadPurchaseExcel() {
+  db.ref("purchase").once("value").then(snapshot => {
+    const rows = [];
+    rows.push(["Date", "Code", "Name", "Qty"]);
+
+    snapshot.forEach(child => {
+      const p = child.val();
+      rows.push([p.date, p.code, p.name || "", p.qty]);
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, "Purchase");
+
+    XLSX.writeFile(wb, "purchase.xlsx");
+  });
+}
 
 <script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   let isMaster = false;
 /* =========================
    Firebase 설정 (확정)
@@ -79,10 +124,35 @@ function savePurchase() {
   const name = document.getElementById("p_name").value.trim();
   const qty  = Number(document.getElementById("p_qty").value);
 
-  if (!code || !qty) {
-    alert("Code / Qty 필수");
+  if (!date || !code || !qty) {
+    alert("Date / Code / Qty required");
     return;
   }
+
+  // 1️⃣ Purchase 로그 저장
+  db.ref("purchase").push({
+    date, code, name, qty,
+    createdAt: new Date().toISOString()
+  });
+
+  // 2️⃣ Stock 누적
+  const stockRef = db.ref("stock/" + code);
+  stockRef.once("value").then(snap => {
+    let currentQty = 0;
+    if (snap.exists()) currentQty = snap.val().qty;
+
+    stockRef.set({
+      code,
+      name,
+      qty: currentQty + qty
+    });
+  });
+
+  alert("Saved");
+  showPurchase();
+  showStock();
+}
+
 
   // 1. 입고 기록 저장
   db.ref("purchase").push({
@@ -127,6 +197,22 @@ function logoutMaster() {
   document.getElementById("masterLogoutBtn").style.display = "none";
   showStock();
 }
+<h3>Purchase History</h3>
+
+<button onclick="downloadPurchaseExcel()">Download Excel</button>
+
+<table border="1" width="100%" style="margin-top:10px">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Code</th>
+      <th>Name</th>
+      <th>Qty</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody id="purchaseBody"></tbody>
+</table>
 
 /* =========================
    Stock 불러오기
