@@ -1,62 +1,53 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>HTORI ERP - STOCK STEP 1+2</title>
+<meta charset="UTF-8">
+<title>HTORI ERP - STOCK CORE</title>
 
-  <style>
-    body { font-family: Arial; background:#f5f6f8; margin:0; }
-    header { background:#1f3c88; color:#fff; padding:12px 20px; font-size:18px; }
-    .wrap { padding:20px; max-width:1000px; }
-    h2 { margin-top:0; }
-    input, button { padding:8px; margin:4px 0; width:260px; }
-    button { cursor:pointer; }
-    table { border-collapse:collapse; background:#fff; margin-top:10px; width:900px; }
-    th, td { border:1px solid #ccc; padding:6px; }
-    th { background:#eee; }
-    .danger { color:red; cursor:pointer; }
-    .hidden { display:none; }
-  </style>
+<style>
+body{font-family:Arial;background:#f5f6f8;margin:0}
+header{background:#1f3c88;color:#fff;padding:12px 20px;font-size:18px}
+.wrap{padding:20px;max-width:1100px}
+input,button{padding:8px;margin:4px 0;width:260px}
+table{border-collapse:collapse;background:#fff;width:100%;margin-top:10px}
+th,td{border:1px solid #ccc;padding:6px}
+th{background:#eee}
+.danger{color:red;cursor:pointer}
+</style>
 </head>
 
 <body>
 
-<header>HTORI ERP – STOCK (STEP 1 + 2)</header>
+<header>HTORI ERP – STOCK (Log Based)</header>
 
 <div class="wrap">
 
-  <h2>Purchase (입고)</h2>
+<h2>Purchase (입고)</h2>
+<input type="date" id="p_date"><br>
+<input id="p_code" placeholder="Code (M001)"><br>
+<input id="p_name" placeholder="Name"><br>
+<input type="number" id="p_qty" placeholder="Qty"><br>
+<button onclick="savePurchase()">Save Purchase</button>
 
-  <input type="date" id="p_date"><br>
-  <input id="p_code" placeholder="Code (예: A12)"><br>
-  <input id="p_name" placeholder="Name"><br>
-  <input id="p_qty" type="number" placeholder="Qty"><br>
-  <button onclick="savePurchase()">Save Purchase</button>
-  <button onclick="loginMaster()">Login Master</button>
+<hr>
 
-  <hr>
+<h2>Purchase History</h2>
+<table>
+<thead>
+<tr><th>Date</th><th>Code</th><th>Name</th><th>Qty</th><th>Action</th></tr>
+</thead>
+<tbody id="purchaseBody"></tbody>
+</table>
 
-  <h2>Purchase History</h2>
-  <button onclick="downloadExcel()">Download Excel</button>
+<hr>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th><th>Code</th><th>Name</th><th>Qty</th><th>Action</th>
-      </tr>
-    </thead>
-    <tbody id="purchaseBody"></tbody>
-  </table>
-
-  <hr>
-
-  <h2>Stock</h2>
-  <table>
-    <thead>
-      <tr><th>Code</th><th>Name</th><th>Qty</th></tr>
-    </thead>
-    <tbody id="stockBody"></tbody>
-  </table>
+<h2>Stock (Calculated)</h2>
+<table>
+<thead>
+<tr><th>Code</th><th>Name</th><th>Qty</th></tr>
+</thead>
+<tbody id="stockBody"></tbody>
+</table>
 
 </div>
 
@@ -64,33 +55,15 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-<!-- XLSX -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
 <script>
 /* ================= Firebase ================= */
 firebase.initializeApp({
   apiKey: "AIzaSyARxh0wfAo2RMz_-3KsWUUQYfND_F3_3fI",
   authDomain: "htori-erp-38ed1.firebaseapp.com",
   databaseURL: "https://htori-erp-38ed1-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "htori-erp-38ed1",
+  projectId: "htori-erp-38ed1"
 });
 const db = firebase.database();
-
-/* ================= State ================= */
-let isMaster = false;
-
-/* ================= Master Login ================= */
-function loginMaster(){
-  const pw = prompt("Master Password");
-  if(pw === "1234"){
-    isMaster = true;
-    alert("Master Login OK");
-    showPurchase();
-  } else {
-    alert("Wrong password");
-  }
-}
 
 /* ================= Save Purchase ================= */
 function savePurchase(){
@@ -100,56 +73,90 @@ function savePurchase(){
   const qty  = Number(p_qty.value);
 
   if(!date || !code || !qty){
-    alert("Date / Code / Qty required");
+    alert("Date / Code / Qty 필수");
     return;
   }
 
-  const ref = db.ref("purchase").push();
-  ref.set({ date, code, name, qty });
+  // 1️⃣ Purchase 기록
+  const pRef = db.ref("purchase").push();
+  pRef.set({ date, code, name, qty });
 
-  const stockRef = db.ref("stock/" + code);
-  stockRef.once("value").then(s=>{
-    let cur = s.exists() ? s.val().qty : 0;
-    stockRef.set({ code, name, qty: cur + qty });
+  // 2️⃣ Stock Movement (IN)
+  db.ref("stock_movement").push({
+    date,
+    code,
+    name,
+    qty,
+    type: "IN",
+    source: "PURCHASE",
+    refId: pRef.key,
+    createdAt: new Date().toISOString()
   });
 
   showPurchase();
-  showStock();
+  recalcStock(code);
+}
+
+/* ================= Delete Purchase ================= */
+function delPurchase(key, code){
+  if(!confirm("삭제?")) return;
+
+  db.ref("purchase/"+key).remove();
+
+  db.ref("stock_movement")
+    .orderByChild("refId")
+    .equalTo(key)
+    .once("value")
+    .then(snap=>{
+      snap.forEach(c => c.ref.remove());
+      recalcStock(code);
+      showPurchase();
+    });
+}
+
+/* ================= Recalculate Stock ================= */
+function recalcStock(code){
+  db.ref("stock_movement")
+    .orderByChild("code")
+    .equalTo(code)
+    .once("value")
+    .then(snap=>{
+      let total = 0;
+      let name = "";
+
+      snap.forEach(c=>{
+        const m = c.val();
+        name = m.name || name;
+        total += (m.type === "IN" ? m.qty : -m.qty);
+      });
+
+      db.ref("stock/"+code).set({
+        code,
+        name,
+        qty: total
+      });
+
+      showStock();
+    });
 }
 
 /* ================= Show Purchase ================= */
 function showPurchase(){
   purchaseBody.innerHTML = "";
   db.ref("purchase").once("value").then(snap=>{
-    snap.forEach(child=>{
-      const p = child.val();
-      const key = child.key;
-      let act = "";
-      if(isMaster){
-        act = `<span class="danger" onclick="delPurchase('${key}','${p.code}',${p.qty})">Del</span>`;
-      }
+    snap.forEach(c=>{
+      const p = c.val();
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${p.date}</td><td>${p.code}</td><td>${p.name}</td><td>${p.qty}</td><td>${act}</td>`;
+      tr.innerHTML = `
+        <td>${p.date}</td>
+        <td>${p.code}</td>
+        <td>${p.name||""}</td>
+        <td>${p.qty}</td>
+        <td><span class="danger" onclick="delPurchase('${c.key}','${p.code}')">Del</span></td>
+      `;
       purchaseBody.appendChild(tr);
     });
   });
-}
-
-/* ================= Delete Purchase (Master) ================= */
-function delPurchase(key, code, qty){
-  if(!confirm("Delete?")) return;
-
-  db.ref("purchase/"+key).remove();
-
-  const sref = db.ref("stock/"+code);
-  sref.once("value").then(s=>{
-    if(s.exists()){
-      sref.update({ qty: s.val().qty - qty });
-    }
-  });
-
-  showPurchase();
-  showStock();
 }
 
 /* ================= Show Stock ================= */
@@ -162,21 +169,6 @@ function showStock(){
       tr.innerHTML = `<td>${s.code}</td><td>${s.name||""}</td><td>${s.qty}</td>`;
       stockBody.appendChild(tr);
     });
-  });
-}
-
-/* ================= Excel Download ================= */
-function downloadExcel(){
-  db.ref("purchase").once("value").then(snap=>{
-    const rows = [["Date","Code","Name","Qty"]];
-    snap.forEach(c=>{
-      const p = c.val();
-      rows.push([p.date,p.code,p.name,p.qty]);
-    });
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    XLSX.utils.book_append_sheet(wb, ws, "Purchase");
-    XLSX.writeFile(wb, "purchase.xlsx");
   });
 }
 
