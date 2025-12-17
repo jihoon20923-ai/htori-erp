@@ -35,23 +35,28 @@
   <input type="number" id="p_qty" placeholder="Qty">
 
   <button onclick="savePurchase()">Save Purchase</button>
+  <button id="masterLoginBtn" onclick="loginMaster()">Login Master</button>
+  <button id="masterLogoutBtn" onclick="logoutMaster()" style="display:none">Logout Master</button>
 
   <h2>Stock</h2>
 
   <table>
-    <thead>
-      <tr>
-        <th>Code</th>
-        <th>Name</th>
-        <th>Qty</th>
-      </tr>
-    </thead>
+<thead>
+  <tr>
+    <th>Code</th>
+    <th>Name</th>
+    <th>Qty</th>
+    <th>Action</th>
+  </tr>
+</thead>
+
     <tbody id="stockBody"></tbody>
   </table>
 
 </div>
 
 <script>
+  let isMaster = false;
 /* =========================
    Firebase 설정 (확정)
 ========================= */
@@ -103,6 +108,25 @@ function savePurchase() {
     showStock();
   });
 }
+function loginMaster() {
+  const pw = prompt("Master Password");
+  if (pw === "1234") {
+    isMaster = true;
+    alert("Master Login OK");
+    document.getElementById("masterLoginBtn").style.display = "none";
+    document.getElementById("masterLogoutBtn").style.display = "block";
+    showStock();
+  } else {
+    alert("Wrong Password");
+  }
+}
+
+function logoutMaster() {
+  isMaster = false;
+  document.getElementById("masterLoginBtn").style.display = "block";
+  document.getElementById("masterLogoutBtn").style.display = "none";
+  showStock();
+}
 
 /* =========================
    Stock 불러오기
@@ -114,16 +138,49 @@ function showStock() {
   db.ref("stock").once("value").then(snapshot => {
     snapshot.forEach(child => {
       const s = child.val();
+      const key = child.key;
+
       const tr = document.createElement("tr");
+
+      let actionHtml = "";
+      if (isMaster) {
+        actionHtml = `
+          <button onclick="editStock('${key}')">Edit</button>
+          <button onclick="deleteStock('${key}')">Del</button>
+        `;
+      }
+
       tr.innerHTML = `
         <td>${s.code}</td>
         <td>${s.name}</td>
         <td>${s.qty}</td>
+        <td>${actionHtml}</td>
       `;
       body.appendChild(tr);
     });
   });
 }
+function editStock(key) {
+  const newQty = Number(prompt("New Qty"));
+  if (!newQty && newQty !== 0) return;
+
+  db.ref("stock/" + key).update({
+    qty: newQty
+  }).then(() => {
+    alert("Updated");
+    showStock();
+  });
+}
+
+function deleteStock(key) {
+  if (!confirm("Delete this stock?")) return;
+
+  db.ref("stock/" + key).remove().then(() => {
+    alert("Deleted");
+    showStock();
+  });
+}
+
 
 // 페이지 로드시 재고 표시
 showStock();
