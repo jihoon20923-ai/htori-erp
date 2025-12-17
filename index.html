@@ -2,14 +2,15 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>HTORI ERP - STOCK CORE</title>
+<title>HTORI ERP CORE</title>
 
 <style>
-body{font-family:Arial;background:#f5f6f8;margin:0}
+body{font-family:Arial;background:#f4f6f9;margin:0}
 header{background:#1f3c88;color:#fff;padding:12px 20px;font-size:18px}
-.wrap{padding:20px;max-width:1100px}
-input,button{padding:8px;margin:4px 0;width:260px}
-table{border-collapse:collapse;background:#fff;width:100%;margin-top:10px}
+.wrap{padding:20px;max-width:1200px}
+h2{margin-top:30px}
+input,select,button{padding:6px;margin:4px;width:240px}
+table{border-collapse:collapse;width:100%;background:#fff;margin-top:10px}
 th,td{border:1px solid #ccc;padding:6px}
 th{background:#eee}
 .danger{color:red;cursor:pointer}
@@ -18,34 +19,55 @@ th{background:#eee}
 
 <body>
 
-<header>HTORI ERP – STOCK (Log Based)</header>
+<header>HTORI ERP – STOCK / PRODUCTION / DEFECT / OUTSOURCE</header>
 
 <div class="wrap">
 
+<!-- ================= PURCHASE ================= -->
 <h2>Purchase (입고)</h2>
-<input type="date" id="p_date"><br>
-<input id="p_code" placeholder="Code (M001)"><br>
-<input id="p_name" placeholder="Name"><br>
-<input type="number" id="p_qty" placeholder="Qty"><br>
-<button onclick="savePurchase()">Save Purchase</button>
+<input type="date" id="p_date">
+<input id="p_code" placeholder="Code">
+<input id="p_name" placeholder="Name">
+<input type="number" id="p_qty" placeholder="Qty">
+<button onclick="savePurchase()">Save</button>
 
-<hr>
-
-<h2>Purchase History</h2>
 <table>
-<thead>
-<tr><th>Date</th><th>Code</th><th>Name</th><th>Qty</th><th>Action</th></tr>
-</thead>
+<thead><tr><th>Date</th><th>Code</th><th>Name</th><th>Qty</th><th></th></tr></thead>
 <tbody id="purchaseBody"></tbody>
 </table>
 
-<hr>
+<!-- ================= PRODUCTION ================= -->
+<h2>Production (공정)</h2>
+<select id="prod_process">
+  <option value="P01">P01</option>
+  <option value="P02">P02</option>
+</select>
+<input id="prod_in" placeholder="Input Code">
+<input id="prod_out" placeholder="Output Code">
+<input type="number" id="prod_qty" placeholder="Qty">
+<button onclick="saveProduction()">Run</button>
 
+<!-- ================= DEFECT ================= -->
+<h2>Defect (불량)</h2>
+<input id="def_code" placeholder="Code">
+<input type="number" id="def_qty" placeholder="Qty">
+<button onclick="saveDefect()">Defect</button>
+
+<!-- ================= OUTSOURCE ================= -->
+<h2>Outsource</h2>
+<select id="os_type">
+  <option value="OUT">Send</option>
+  <option value="IN">Receive</option>
+</select>
+<input id="os_vendor" placeholder="Vendor">
+<input id="os_code" placeholder="Code">
+<input type="number" id="os_qty" placeholder="Qty">
+<button onclick="saveOutsource()">Save</button>
+
+<!-- ================= STOCK ================= -->
 <h2>Stock (Calculated)</h2>
 <table>
-<thead>
-<tr><th>Code</th><th>Name</th><th>Qty</th></tr>
-</thead>
+<thead><tr><th>Code</th><th>Name</th><th>Qty</th></tr></thead>
 <tbody id="stockBody"></tbody>
 </table>
 
@@ -56,123 +78,98 @@ th{background:#eee}
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-/* ================= Firebase ================= */
 firebase.initializeApp({
-  apiKey: "AIzaSyARxh0wfAo2RMz_-3KsWUUQYfND_F3_3fI",
-  authDomain: "htori-erp-38ed1.firebaseapp.com",
-  databaseURL: "https://htori-erp-38ed1-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "htori-erp-38ed1"
+  apiKey:"AIzaSyARxh0wfAo2RMz_-3KsWUUQYfND_F3_3fI",
+  authDomain:"htori-erp-38ed1.firebaseapp.com",
+  databaseURL:"https://htori-erp-38ed1-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"htori-erp-38ed1"
 });
 const db = firebase.database();
 
-/* ================= Save Purchase ================= */
-function savePurchase(){
-  const date = p_date.value;
-  const code = p_code.value.trim();
-  const name = p_name.value.trim();
-  const qty  = Number(p_qty.value);
+/* ================= CORE FUNCTIONS ================= */
 
-  if(!date || !code || !qty){
-    alert("Date / Code / Qty 필수");
-    return;
-  }
-
-  // 1️⃣ Purchase 기록
-  const pRef = db.ref("purchase").push();
-  pRef.set({ date, code, name, qty });
-
-  // 2️⃣ Stock Movement (IN)
-  db.ref("stock_movement").push({
-    date,
-    code,
-    name,
-    qty,
-    type: "IN",
-    source: "PURCHASE",
-    refId: pRef.key,
-    createdAt: new Date().toISOString()
-  });
-
-  showPurchase();
-  recalcStock(code);
+function addMovement(obj){
+  db.ref("stock_movement").push(obj).then(()=>recalcStock(obj.code));
 }
 
-/* ================= Delete Purchase ================= */
-function delPurchase(key, code){
-  if(!confirm("삭제?")) return;
-
-  db.ref("purchase/"+key).remove();
-
-  db.ref("stock_movement")
-    .orderByChild("refId")
-    .equalTo(key)
-    .once("value")
-    .then(snap=>{
-      snap.forEach(c => c.ref.remove());
-      recalcStock(code);
-      showPurchase();
-    });
-}
-
-/* ================= Recalculate Stock ================= */
 function recalcStock(code){
-  db.ref("stock_movement")
-    .orderByChild("code")
-    .equalTo(code)
-    .once("value")
-    .then(snap=>{
-      let total = 0;
-      let name = "";
-
-      snap.forEach(c=>{
-        const m = c.val();
-        name = m.name || name;
-        total += (m.type === "IN" ? m.qty : -m.qty);
-      });
-
-      db.ref("stock/"+code).set({
-        code,
-        name,
-        qty: total
-      });
-
-      showStock();
+  db.ref("stock_movement").orderByChild("code").equalTo(code).once("value").then(snap=>{
+    let qty=0,name="";
+    snap.forEach(c=>{
+      const m=c.val();
+      name=m.name||name;
+      qty += (m.type==="IN"?m.qty:-m.qty);
     });
+    db.ref("stock/"+code).set({code,name,qty});
+    showStock();
+  });
 }
 
-/* ================= Show Purchase ================= */
+/* ================= PURCHASE ================= */
+function savePurchase(){
+  const date=p_date.value,code=p_code.value.trim(),name=p_name.value.trim(),qty=+p_qty.value;
+  const ref=db.ref("purchase").push();
+  ref.set({date,code,name,qty});
+  addMovement({date,code,name,qty,type:"IN",source:"PURCHASE",refId:ref.key});
+  showPurchase();
+}
+
 function showPurchase(){
-  purchaseBody.innerHTML = "";
-  db.ref("purchase").once("value").then(snap=>{
-    snap.forEach(c=>{
-      const p = c.val();
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${p.date}</td>
-        <td>${p.code}</td>
-        <td>${p.name||""}</td>
-        <td>${p.qty}</td>
-        <td><span class="danger" onclick="delPurchase('${c.key}','${p.code}')">Del</span></td>
-      `;
-      purchaseBody.appendChild(tr);
+  purchaseBody.innerHTML="";
+  db.ref("purchase").once("value").then(s=>{
+    s.forEach(c=>{
+      const p=c.val();
+      purchaseBody.innerHTML+=`<tr>
+      <td>${p.date}</td><td>${p.code}</td><td>${p.name}</td><td>${p.qty}</td>
+      <td class="danger" onclick="delPurchase('${c.key}','${p.code}')">Del</td></tr>`;
     });
   });
 }
 
-/* ================= Show Stock ================= */
+function delPurchase(k,code){
+  db.ref("purchase/"+k).remove();
+  db.ref("stock_movement").orderByChild("refId").equalTo(k).once("value").then(s=>{
+    s.forEach(c=>c.ref.remove());
+    recalcStock(code);
+    showPurchase();
+  });
+}
+
+/* ================= PRODUCTION ================= */
+function saveProduction(){
+  const p=prod_process.value,inC=prod_in.value,outC=prod_out.value,qty=+prod_qty.value;
+  addMovement({code:inC,qty,type:"OUT",source:"PRODUCTION",process:p});
+  addMovement({code:outC,qty,type:"IN",source:"PRODUCTION",process:p});
+}
+
+/* ================= DEFECT ================= */
+function saveDefect(){
+  addMovement({code:def_code.value,qty:+def_qty.value,type:"OUT",source:"DEFECT"});
+}
+
+/* ================= OUTSOURCE ================= */
+function saveOutsource(){
+  addMovement({
+    code:os_code.value,
+    qty:+os_qty.value,
+    type:os_type.value,
+    source:"OUTSOURCE",
+    vendor:os_vendor.value
+  });
+}
+
+/* ================= STOCK ================= */
 function showStock(){
-  stockBody.innerHTML = "";
-  db.ref("stock").once("value").then(snap=>{
-    snap.forEach(c=>{
-      const s = c.val();
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${s.code}</td><td>${s.name||""}</td><td>${s.qty}</td>`;
-      stockBody.appendChild(tr);
+  stockBody.innerHTML="";
+  db.ref("stock").once("value").then(s=>{
+    s.forEach(c=>{
+      const v=c.val();
+      stockBody.innerHTML+=`<tr><td>${v.code}</td><td>${v.name||""}</td><td>${v.qty}</td></tr>`;
     });
   });
 }
 
-/* ================= Init ================= */
+/* ================= INIT ================= */
 showPurchase();
 showStock();
 </script>
