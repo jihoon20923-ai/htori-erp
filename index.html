@@ -1,151 +1,80 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>HTORI ERP - STOCK BASIC</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<title>HTORI ERP - STOCK STEP 1</title>
 
-  <!-- Firebase v8 -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <style>
-    body { font-family: Arial; margin: 0; background:#f5f6f8; }
-    header { background:#1f3c88; color:#fff; padding:12px; font-size:18px; }
-    .wrap { padding:20px; max-width:900px; margin:auto; background:#fff; }
-    h2 { margin-top:0; }
-    input, button { width:100%; padding:8px; margin-bottom:8px; }
-    table { width:100%; border-collapse:collapse; margin-top:20px; }
-    th, td { border:1px solid #ccc; padding:8px; text-align:left; }
-    th { background:#eee; }
-    button { cursor:pointer; }
-  </style>
+<style>
+body { font-family: Arial; padding:20px; }
+input, button { width:100%; margin:4px 0; padding:6px; }
+table { width:100%; border-collapse:collapse; margin-top:10px; }
+th, td { border:1px solid #ccc; padding:6px; }
+</style>
 </head>
+
 <body>
 
-<header>HTORI ERP – STOCK STEP 1</header>
+<h2>Purchase (입고)</h2>
 
-<div class="wrap">
+<input type="date" id="p_date">
+<input placeholder="Code (ex: A12)" id="p_code">
+<input placeholder="Name" id="p_name">
+<input placeholder="Qty" id="p_qty">
 
-  <h2>Purchase (입고)</h2>
+<button onclick="savePurchase()">Save Purchase</button>
+<button onclick="loginMaster()">Login Master</button>
 
-  <input type="date" id="p_date">
-  <input type="text" id="p_code" placeholder="Code (예: A12)">
-  <input type="text" id="p_name" placeholder="Name (예: Carton Box)">
-  <input type="number" id="p_qty" placeholder="Qty">
-
-  <button onclick="savePurchase()">Save Purchase</button>
-  <button id="masterLoginBtn" onclick="loginMaster()">Login Master</button>
-  <button id="masterLogoutBtn" onclick="logoutMaster()" style="display:none">Logout Master</button>
-
-  <h2>Stock</h2>
-
-  <table>
+<h2>Stock</h2>
+<table>
 <thead>
-  <tr>
-    <th>Code</th>
-    <th>Name</th>
-    <th>Qty</th>
-    <th>Action</th>
-  </tr>
+<tr><th>Code</th><th>Name</th><th>Qty</th><th>Action</th></tr>
 </thead>
+<tbody id="stockBody"></tbody>
+</table>
 
-    <tbody id="stockBody"></tbody>
-  </table>
-
-</div>
-function showPurchase() {
-  const body = document.getElementById("purchaseBody");
-  body.innerHTML = "";
-
-  db.ref("purchase").once("value").then(snapshot => {
-    snapshot.forEach(child => {
-      const p = child.val();
-      const key = child.key;
-
-      let action = "";
-      if (isMaster) {
-        action = `<button onclick="deletePurchase('${key}')">Del</button>`;
-      }
-
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${p.date}</td>
-        <td>${p.code}</td>
-        <td>${p.name || ""}</td>
-        <td>${p.qty}</td>
-        <td>${action}</td>
-      `;
-      body.appendChild(tr);
-    });
-  });
-}
-function downloadPurchaseExcel() {
-  db.ref("purchase").once("value").then(snapshot => {
-    const rows = [];
-    rows.push(["Date", "Code", "Name", "Qty"]);
-
-    snapshot.forEach(child => {
-      const p = child.val();
-      rows.push([p.date, p.code, p.name || "", p.qty]);
-    });
-
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    XLSX.utils.book_append_sheet(wb, ws, "Purchase");
-
-    XLSX.writeFile(wb, "purchase.xlsx");
-  });
-}
+<h2>Purchase History</h2>
+<button onclick="downloadPurchaseExcel()">Download Excel</button>
+<table>
+<thead>
+<tr><th>Date</th><th>Code</th><th>Name</th><th>Qty</th><th>Action</th></tr>
+</thead>
+<tbody id="purchaseBody"></tbody>
+</table>
 
 <script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-  let isMaster = false;
-/* =========================
-   Firebase 설정 (확정)
-========================= */
+/* ===== Firebase 설정 (38ed1) ===== */
 const firebaseConfig = {
   apiKey: "AIzaSyDwiTlPtoXraEtA7TzTctdH6DJS6gdSEGQ",
-  authDomain: "htori-erp-38ed1.firebaseapp.com",
-  databaseURL: "https://htori-erp-38ed1-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "htori-erp-38ed1",
+  databaseURL: "https://htori-erp-38ed1-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* =========================
-   Purchase 저장 → Stock 누적
-========================= */
-function savePurchase() {
-  const date = document.getElementById("p_date").value;
-  const code = document.getElementById("p_code").value.trim();
-  const name = document.getElementById("p_name").value.trim();
-  const qty  = Number(document.getElementById("p_qty").value);
+let isMaster = false;
 
-  if (!date || !code || !qty) {
+/* ===== Purchase 저장 + Stock 누적 ===== */
+function savePurchase(){
+  const date = p_date.value;
+  const code = p_code.value.trim();
+  const name = p_name.value.trim();
+  const qty  = Number(p_qty.value);
+
+  if(!date || !code || !qty){
     alert("Date / Code / Qty required");
     return;
   }
 
-  // 1️⃣ Purchase 로그 저장
-  db.ref("purchase").push({
-    date, code, name, qty,
-    createdAt: new Date().toISOString()
-  });
+  db.ref("purchase").push({date, code, name, qty});
 
-  // 2️⃣ Stock 누적
   const stockRef = db.ref("stock/" + code);
-  stockRef.once("value").then(snap => {
-    let currentQty = 0;
-    if (snap.exists()) currentQty = snap.val().qty;
-
-    stockRef.set({
-      code,
-      name,
-      qty: currentQty + qty
-    });
+  stockRef.once("value").then(snap=>{
+    let current = 0;
+    if(snap.exists()) current = snap.val().qty;
+    stockRef.set({code, name, qty: current + qty});
   });
 
   alert("Saved");
@@ -153,123 +82,81 @@ function savePurchase() {
   showStock();
 }
 
-
-  // 1. 입고 기록 저장
-  db.ref("purchase").push({
-    date, code, name, qty
-  });
-
-  // 2. 재고 누적
-  const stockRef = db.ref("stock/" + code);
-
-  stockRef.once("value").then(snap => {
-    let currentQty = 0;
-    if (snap.exists()) {
-      currentQty = snap.val().qty;
-    }
-
-    stockRef.set({
-      code: code,
-      name: name,
-      qty: currentQty + qty
+/* ===== Stock 조회 ===== */
+function showStock(){
+  const body = document.getElementById("stockBody");
+  body.innerHTML = "";
+  db.ref("stock").once("value").then(snap=>{
+    snap.forEach(c=>{
+      const s = c.val();
+      let btn = isMaster ? `<button onclick="deleteStock('${c.key}')">Del</button>` : "";
+      body.innerHTML += `<tr><td>${s.code}</td><td>${s.name}</td><td>${s.qty}</td><td>${btn}</td></tr>`;
     });
-  }).then(() => {
-    alert("Saved");
-    showStock();
   });
 }
-function loginMaster() {
-  const pw = prompt("Master Password");
-  if (pw === "1234") {
-    isMaster = true;
-    alert("Master Login OK");
-    document.getElementById("masterLoginBtn").style.display = "none";
-    document.getElementById("masterLogoutBtn").style.display = "block";
+
+/* ===== Purchase 조회 ===== */
+function showPurchase(){
+  const body = document.getElementById("purchaseBody");
+  body.innerHTML = "";
+  db.ref("purchase").once("value").then(snap=>{
+    snap.forEach(c=>{
+      const p = c.val();
+      let btn = isMaster ? `<button onclick="deletePurchase('${c.key}')">Del</button>` : "";
+      body.innerHTML += `<tr>
+        <td>${p.date}</td>
+        <td>${p.code}</td>
+        <td>${p.name}</td>
+        <td>${p.qty}</td>
+        <td>${btn}</td>
+      </tr>`;
+    });
+  });
+}
+
+/* ===== 삭제 ===== */
+function deletePurchase(k){
+  if(confirm("Delete?")){
+    db.ref("purchase/"+k).remove();
+    showPurchase();
+  }
+}
+function deleteStock(k){
+  if(confirm("Delete stock?")){
+    db.ref("stock/"+k).remove();
     showStock();
-  } else {
-    alert("Wrong Password");
   }
 }
 
-function logoutMaster() {
-  isMaster = false;
-  document.getElementById("masterLoginBtn").style.display = "block";
-  document.getElementById("masterLogoutBtn").style.display = "none";
-  showStock();
+/* ===== Master ===== */
+function loginMaster(){
+  const pw = prompt("Master password");
+  if(pw === "1234"){
+    isMaster = true;
+    alert("Master ON");
+    showStock();
+    showPurchase();
+  }
 }
-<h3>Purchase History</h3>
 
-<button onclick="downloadPurchaseExcel()">Download Excel</button>
-
-<table border="1" width="100%" style="margin-top:10px">
-  <thead>
-    <tr>
-      <th>Date</th>
-      <th>Code</th>
-      <th>Name</th>
-      <th>Qty</th>
-      <th>Action</th>
-    </tr>
-  </thead>
-  <tbody id="purchaseBody"></tbody>
-</table>
-
-/* =========================
-   Stock 불러오기
-========================= */
-function showStock() {
-  const body = document.getElementById("stockBody");
-  body.innerHTML = "";
-
-  db.ref("stock").once("value").then(snapshot => {
-    snapshot.forEach(child => {
-      const s = child.val();
-      const key = child.key;
-
-      const tr = document.createElement("tr");
-
-      let actionHtml = "";
-      if (isMaster) {
-        actionHtml = `
-          <button onclick="editStock('${key}')">Edit</button>
-          <button onclick="deleteStock('${key}')">Del</button>
-        `;
-      }
-
-      tr.innerHTML = `
-        <td>${s.code}</td>
-        <td>${s.name}</td>
-        <td>${s.qty}</td>
-        <td>${actionHtml}</td>
-      `;
-      body.appendChild(tr);
+/* ===== Excel ===== */
+function downloadPurchaseExcel(){
+  db.ref("purchase").once("value").then(snap=>{
+    const rows = [["Date","Code","Name","Qty"]];
+    snap.forEach(c=>{
+      const p = c.val();
+      rows.push([p.date,p.code,p.name,p.qty]);
     });
-  });
-}
-function editStock(key) {
-  const newQty = Number(prompt("New Qty"));
-  if (!newQty && newQty !== 0) return;
-
-  db.ref("stock/" + key).update({
-    qty: newQty
-  }).then(() => {
-    alert("Updated");
-    showStock();
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, "Purchase");
+    XLSX.writeFile(wb, "purchase.xlsx");
   });
 }
 
-function deleteStock(key) {
-  if (!confirm("Delete this stock?")) return;
-
-  db.ref("stock/" + key).remove().then(() => {
-    alert("Deleted");
-    showStock();
-  });
-}
-
-
-// 페이지 로드시 재고 표시
+/* ===== 최초 로드 ===== */
 showStock();
+showPurchase();
 </script>
 
 </body>
