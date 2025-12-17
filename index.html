@@ -2,164 +2,187 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>HTORI ERP - STOCK BASIC</title>
+  <title>HTORI ERP - STOCK STEP 1+2</title>
 
   <style>
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      background: #f5f6f8;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background: #1f3c88;
-      color: white;
-      padding: 12px 20px;
-      font-size: 18px;
-    }
-    .container {
-      padding: 20px;
-      max-width: 900px;
-    }
-    h2 {
-      margin-top: 0;
-    }
-    input, button {
-      width: 300px;
-      padding: 8px;
-      margin: 6px 0;
-      font-size: 14px;
-    }
-    button {
-      cursor: pointer;
-    }
-    table {
-      border-collapse: collapse;
-      width: 600px;
-      margin-top: 20px;
-      background: white;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background: #eee;
-    }
+    body { font-family: Arial; background:#f5f6f8; margin:0; }
+    header { background:#1f3c88; color:#fff; padding:12px 20px; font-size:18px; }
+    .wrap { padding:20px; max-width:1000px; }
+    h2 { margin-top:0; }
+    input, button { padding:8px; margin:4px 0; width:260px; }
+    button { cursor:pointer; }
+    table { border-collapse:collapse; background:#fff; margin-top:10px; width:900px; }
+    th, td { border:1px solid #ccc; padding:6px; }
+    th { background:#eee; }
+    .danger { color:red; cursor:pointer; }
+    .hidden { display:none; }
   </style>
 </head>
 
 <body>
 
-<header>HTORI ERP - STOCK (STEP 1)</header>
+<header>HTORI ERP – STOCK (STEP 1 + 2)</header>
 
-<div class="container">
+<div class="wrap">
 
   <h2>Purchase (입고)</h2>
 
   <input type="date" id="p_date"><br>
-  <input type="text" id="p_code" placeholder="Code (예: A12)"><br>
-  <input type="text" id="p_name" placeholder="Name (예: Carton Box)"><br>
-  <input type="number" id="p_qty" placeholder="Qty"><br>
-
+  <input id="p_code" placeholder="Code (예: A12)"><br>
+  <input id="p_name" placeholder="Name"><br>
+  <input id="p_qty" type="number" placeholder="Qty"><br>
   <button onclick="savePurchase()">Save Purchase</button>
+  <button onclick="loginMaster()">Login Master</button>
 
   <hr>
 
-  <h2>Stock</h2>
+  <h2>Purchase History</h2>
+  <button onclick="downloadExcel()">Download Excel</button>
 
   <table>
     <thead>
       <tr>
-        <th>Code</th>
-        <th>Name</th>
-        <th>Qty</th>
+        <th>Date</th><th>Code</th><th>Name</th><th>Qty</th><th>Action</th>
       </tr>
+    </thead>
+    <tbody id="purchaseBody"></tbody>
+  </table>
+
+  <hr>
+
+  <h2>Stock</h2>
+  <table>
+    <thead>
+      <tr><th>Code</th><th>Name</th><th>Qty</th></tr>
     </thead>
     <tbody id="stockBody"></tbody>
   </table>
 
 </div>
 
-<!-- ================= Firebase CDN (v8) ================= -->
+<!-- Firebase v8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
+<!-- XLSX -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <script>
-  // 🔥 Firebase 설정 (htori-erp-38ed1)
-  const firebaseConfig = {
-    apiKey: "AIzaSyARxh0wfAo2RMz_-3KsWUUQYfND_F3_3fI",
-    authDomain: "htori-erp-38ed1.firebaseapp.com",
-    databaseURL: "https://htori-erp-38ed1-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "htori-erp-38ed1",
-    storageBucket: "htori-erp-38ed1.firebasestorage.app",
-    messagingSenderId: "653618187246",
-    appId: "1:653618187246:web:cfdf888e1bbb3106cedcff"
-  };
+/* ================= Firebase ================= */
+firebase.initializeApp({
+  apiKey: "AIzaSyARxh0wfAo2RMz_-3KsWUUQYfND_F3_3fI",
+  authDomain: "htori-erp-38ed1.firebaseapp.com",
+  databaseURL: "https://htori-erp-38ed1-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "htori-erp-38ed1",
+});
+const db = firebase.database();
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+/* ================= State ================= */
+let isMaster = false;
 
-  // ================= Purchase 저장 =================
-  function savePurchase() {
-    const date = document.getElementById("p_date").value;
-    const code = document.getElementById("p_code").value.trim();
-    const name = document.getElementById("p_name").value.trim();
-    const qty  = Number(document.getElementById("p_qty").value);
+/* ================= Master Login ================= */
+function loginMaster(){
+  const pw = prompt("Master Password");
+  if(pw === "1234"){
+    isMaster = true;
+    alert("Master Login OK");
+    showPurchase();
+  } else {
+    alert("Wrong password");
+  }
+}
 
-    if (!date || !code || !qty) {
-      alert("Date / Code / Qty 필수");
-      return;
-    }
+/* ================= Save Purchase ================= */
+function savePurchase(){
+  const date = p_date.value;
+  const code = p_code.value.trim();
+  const name = p_name.value.trim();
+  const qty  = Number(p_qty.value);
 
-    // 1️⃣ 입고 로그 저장
-    db.ref("purchase").push({
-      date, code, name, qty,
-      createdAt: new Date().toISOString()
-    });
-
-    // 2️⃣ 재고 누적
-    const stockRef = db.ref("stock/" + code);
-
-    stockRef.once("value").then(snapshot => {
-      let currentQty = 0;
-      if (snapshot.exists()) {
-        currentQty = snapshot.val().qty;
-      }
-
-      stockRef.set({
-        code: code,
-        name: name,
-        qty: currentQty + qty
-      });
-    });
-
-    alert("Saved");
-    showStock();
+  if(!date || !code || !qty){
+    alert("Date / Code / Qty required");
+    return;
   }
 
-  // ================= Stock 표시 =================
-  function showStock() {
-    const body = document.getElementById("stockBody");
-    body.innerHTML = "";
+  const ref = db.ref("purchase").push();
+  ref.set({ date, code, name, qty });
 
-    db.ref("stock").once("value").then(snapshot => {
-      snapshot.forEach(child => {
-        const s = child.val();
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${s.code}</td>
-          <td>${s.name || ""}</td>
-          <td>${s.qty}</td>
-        `;
-        body.appendChild(tr);
-      });
-    });
-  }
+  const stockRef = db.ref("stock/" + code);
+  stockRef.once("value").then(s=>{
+    let cur = s.exists() ? s.val().qty : 0;
+    stockRef.set({ code, name, qty: cur + qty });
+  });
 
-  // 최초 로딩 시 재고 표시
+  showPurchase();
   showStock();
+}
+
+/* ================= Show Purchase ================= */
+function showPurchase(){
+  purchaseBody.innerHTML = "";
+  db.ref("purchase").once("value").then(snap=>{
+    snap.forEach(child=>{
+      const p = child.val();
+      const key = child.key;
+      let act = "";
+      if(isMaster){
+        act = `<span class="danger" onclick="delPurchase('${key}','${p.code}',${p.qty})">Del</span>`;
+      }
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${p.date}</td><td>${p.code}</td><td>${p.name}</td><td>${p.qty}</td><td>${act}</td>`;
+      purchaseBody.appendChild(tr);
+    });
+  });
+}
+
+/* ================= Delete Purchase (Master) ================= */
+function delPurchase(key, code, qty){
+  if(!confirm("Delete?")) return;
+
+  db.ref("purchase/"+key).remove();
+
+  const sref = db.ref("stock/"+code);
+  sref.once("value").then(s=>{
+    if(s.exists()){
+      sref.update({ qty: s.val().qty - qty });
+    }
+  });
+
+  showPurchase();
+  showStock();
+}
+
+/* ================= Show Stock ================= */
+function showStock(){
+  stockBody.innerHTML = "";
+  db.ref("stock").once("value").then(snap=>{
+    snap.forEach(c=>{
+      const s = c.val();
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${s.code}</td><td>${s.name||""}</td><td>${s.qty}</td>`;
+      stockBody.appendChild(tr);
+    });
+  });
+}
+
+/* ================= Excel Download ================= */
+function downloadExcel(){
+  db.ref("purchase").once("value").then(snap=>{
+    const rows = [["Date","Code","Name","Qty"]];
+    snap.forEach(c=>{
+      const p = c.val();
+      rows.push([p.date,p.code,p.name,p.qty]);
+    });
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, "Purchase");
+    XLSX.writeFile(wb, "purchase.xlsx");
+  });
+}
+
+/* ================= Init ================= */
+showPurchase();
+showStock();
 </script>
 
 </body>
