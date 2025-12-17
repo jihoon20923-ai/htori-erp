@@ -44,6 +44,88 @@ th, td { border:1px solid #ccc; padding:6px; }
 </thead>
 <tbody id="purchaseBody"></tbody>
 </table>
+<h2>Defect (불량)</h2>
+
+<input type="date" id="d_date">
+<input placeholder="Code (ex: A12)" id="d_code">
+<input placeholder="Qty (불량수량)" id="d_qty">
+<input placeholder="Reason (optional)" id="d_reason">
+
+<button onclick="saveDefect()">Save Defect</button>
+
+<table>
+<thead>
+<tr><th>Date</th><th>Code</th><th>Qty</th><th>Reason</th><th>Action</th></tr>
+</thead>
+<tbody id="defectBody"></tbody>
+</table>
+  
+/* ===== DEFECT 저장 + Stock 차감 ===== */
+function saveDefect(){
+  const date = d_date.value;
+  const code = d_code.value.trim();
+  const qty  = Number(d_qty.value);
+  const reason = d_reason.value || "";
+
+  if(!date || !code || !qty){
+    alert("Date / Code / Qty required");
+    return;
+  }
+
+  const stockRef = db.ref("stock/" + code);
+
+  stockRef.once("value").then(snap=>{
+    if(!snap.exists()){
+      alert("Stock not found");
+      return;
+    }
+
+    const current = snap.val().qty;
+    if(current < qty){
+      alert("Not enough stock");
+      return;
+    }
+
+    /* 1. 불량 저장 */
+    db.ref("defect").push({date, code, qty, reason});
+
+    /* 2. 재고 차감 */
+    stockRef.update({ qty: current - qty });
+
+    alert("Defect Saved");
+    showStock();
+    showDefect();
+  });
+}
+
+/* ===== DEFECT 조회 ===== */
+function showDefect(){
+  const body = document.getElementById("defectBody");
+  body.innerHTML = "";
+
+  db.ref("defect").once("value").then(snap=>{
+    snap.forEach(c=>{
+      const d = c.val();
+      let btn = isMaster ? `<button onclick="deleteDefect('${c.key}')">Del</button>` : "";
+      body.innerHTML += `
+        <tr>
+          <td>${d.date}</td>
+          <td>${d.code}</td>
+          <td>${d.qty}</td>
+          <td>${d.reason || ""}</td>
+          <td>${btn}</td>
+        </tr>`;
+    });
+  });
+}
+
+/* ===== DEFECT 삭제 (Master) ===== */
+function deleteDefect(key){
+  if(confirm("Delete defect?")){
+    db.ref("defect/"+key).remove();
+    showDefect();
+  }
+}
 
 <script>
 /* ===== Firebase 설정 (38ed1) ===== */
@@ -157,6 +239,8 @@ function downloadPurchaseExcel(){
 /* ===== 최초 로드 ===== */
 showStock();
 showPurchase();
+showDefect();   // ← 이 줄 추가
+
 </script>
 
 </body>
