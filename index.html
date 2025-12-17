@@ -59,6 +59,71 @@ th, td { border:1px solid #ccc; padding:6px; }
 </thead>
 <tbody id="defectBody"></tbody>
 </table>
+
+  <script>
+function runProduction() {
+  const date = document.getElementById("prod_date").value;
+  const productCode = document.getElementById("prod_code").value.trim();
+  const qty = Number(document.getElementById("prod_qty").value);
+
+  if (!date || !productCode || !qty) {
+    alert("모든 값을 입력하세요");
+    return;
+  }
+
+  // 1. BOM 불러오기
+  db.ref("bom/" + productCode).once("value").then(bomSnap => {
+    if (!bomSnap.exists()) {
+      alert("BOM 없음");
+      return;
+    }
+
+    const materials = bomSnap.val().materials;
+
+    // 2. 재고 차감
+    const updates = {};
+    const promises = [];
+
+    Object.keys(materials).forEach(code => {
+      const needQty = materials[code] * qty;
+
+      const p = db.ref("stock/" + code).once("value").then(snap => {
+        if (!snap.exists()) {
+          alert(code + " 재고 없음");
+          throw "STOP";
+        }
+
+        const current = snap.val().qty;
+        if (current < needQty) {
+          alert(code + " 재고 부족");
+          throw "STOP";
+        }
+
+        updates["stock/" + code + "/qty"] = current - needQty;
+      });
+
+      promises.push(p);
+    });
+
+    Promise.all(promises).then(() => {
+      // 3. 재고 업데이트
+      db.ref().update(updates);
+
+      // 4. 생산 기록
+      db.ref("production").push({
+        date,
+        process: 1,
+        productCode,
+        qty
+      });
+
+      alert("생산 완료");
+      showStock();
+    });
+  });
+}
+</script>
+
   <script>
 /* ===== DEFECT 저장 + Stock 차감 ===== */
 function saveDefect(){
