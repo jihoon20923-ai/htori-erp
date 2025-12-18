@@ -70,7 +70,7 @@ th{background:#eee}
   <button class="menu-btn" onclick="showPage('outsource')">Outsource</button>
   <button class="menu-btn" onclick="showPage('stock')">Stock</button>
   <button class="menu-btn" onclick="showPage('movement')">Stock Log</button>
-
+  <button class="menu-btn" onclick="showPage('salary')">Salary</button>
 </aside>
 
 
@@ -126,18 +126,17 @@ function showPage(key){
 =========================================================== */
 
 function renderPurchase(){
-  content.innerHTML = `
-  <h2>Purchase 입고</h2>
-  <input type="date" id="p_date">
-  <input id="p_code" placeholder="Code">
-  <input id="p_name" placeholder="Name">
-  <input type="number" id="p_qty" placeholder="Qty">
-  <button onclick="savePurchase()">Save</button>
+content.innerHTML = `
+  <h2>Movement Log (재고 변동 내역)</h2>
+
+  <div style="margin-bottom:6px">
+    <input type="date" id="flt_from">
+    <input type="date" id="flt_to">
+    <input id="flt_code" placeholder="Code filter">
+    <button onclick="filterMovement()">Search</button>
+  </div>
 
   <table>
-    <thead><tr><th>Date</th><th>Code</th><th>Name</th><th>Qty</th><th></th></tr></thead>
-    <tbody id="purchaseBody"></tbody>
-  </table>
   `;
   showPurchase();
 }
@@ -159,7 +158,29 @@ function renderProduction(){
   <button onclick="saveProduction()">Run</button>
   `;
 }
+function saveProduction(){
 
+  const p=prod_process.value;
+  const finished=prod_out.value.trim();
+  const qty = +prod_qty.value;
+
+  // BOM lookup
+  db.ref("bom/"+finished+"/components")
+  .once("value")
+  .then(s=>{
+
+    const list=s.val()||{};
+
+    Object.keys(list).forEach(code=>{
+      const need=list[code]*qty;
+      addMovement({code,qty:need,type:"OUT",source:"BOM"});
+    });
+
+    addMovement({code:finished,qty,type:"IN",source:"PRODUCTION",process:p});
+
+  });
+
+}
 
 
 function renderDefect(){
@@ -181,6 +202,12 @@ function renderOutsource(){
     <option value="OUT">Send</option>
     <option value="IN">Receive</option>
   </select>
+
+<input type="number" id="os_price" placeholder="Unit Price">
+<select id="os_paid">
+  <option value="false">미지급</option>
+  <option value="true">지급완료</option>
+</select>
 
   <input id="os_vendor" placeholder="Vendor">
   <input id="os_code" placeholder="Code">
@@ -224,7 +251,72 @@ function renderMovement(){
   showMovement();
 }
 
+function renderSalary(){
+  content.innerHTML=`
+  <h2>급여 입력</h2>
 
+  직원ID <input id="sal_emp">
+  날짜 <input type="date" id="sal_date">
+
+  <select id="sal_type">
+    <option value="hour">시간제</option>
+    <option value="piece">단가제</option>
+  </select>
+
+  수량/시간 <input type="number" id="sal_val">
+  단가 <input type="number" id="sal_rate">
+  <button onclick="saveSalary()">Save</button>
+
+  <table>
+    <thead><tr><th>Date</th><th>ID</th><th>Type</th><th>Value</th><th>Rate</th><th>Pay</th></tr></thead>
+    <tbody id="salBody"></tbody>
+  </table>
+  `;
+
+  loadSalary();
+}
+
+  function saveSalary(){
+
+  const id = sal_emp.value.trim();
+  const date = sal_date.value;
+  const type = sal_type.value;
+  const val  = +sal_val.value;
+  const rate = +sal_rate.value;
+
+  const pay = val*rate;
+
+  const obj={id,date,type,val,rate, pay};
+
+  db.ref("salary_log").push(obj).then(()=>{
+    loadSalary();
+  });
+
+}
+
+function loadSalary(){
+
+  db.ref("salary_log").limitToLast(200)
+  .once("value").then(s=>{
+
+    salBody.innerHTML="";
+
+    s.forEach(c=>{
+      const v=c.val();
+      salBody.innerHTML+=`
+      <tr>
+        <td>${v.date}</td>
+        <td>${v.id}</td>
+        <td>${v.type}</td>
+        <td>${v.val}</td>
+        <td>${v.rate}</td>
+        <td>${v.pay}</td>
+      </tr>`;
+    });
+
+  });
+
+}
 
 
 /* =====================================================================================
@@ -297,13 +389,29 @@ function saveDefect(){
 
 
 function saveOutsource(){
-  addMovement({
+
+  const type=(os_type.value==="OUT"?"OUT":"IN");
+
+  const obj = {
+    vendor:os_vendor.value,
     code:os_code.value,
     qty:+os_qty.value,
-    type:(os_type.value==="OUT"?"OUT":"IN"),
+    price:+os_price.value,
+    paid:(os_paid.value==="true"),
+    type,
+    createdAt:new Date().toISOString()
+  };
+
+  db.ref("outsourcing").push(obj);
+
+  addMovement({
+    code:obj.code,
+    qty:obj.qty,
+    type:(type==="OUT"?"OUT":"IN"),
     source:"OUTSOURCE",
-    vendor:os_vendor.value
+    vendor:obj.vendor
   });
+
 }
 
 
@@ -357,6 +465,46 @@ function recalcAllStock(){
 
 showPage('purchase');
 
+  function filterMovement(){
+
+  const from = flt_from.value;
+  const to   = flt_to.value;
+  const code = flt_code.value.trim();
+
+  movementBody.innerHTML="Loading...";
+
+  db.ref("stock_movement")
+  .once("value").then(s=>{
+
+    let html="";
+
+    s.forEach(c=>{
+
+      const m=c.val();
+
+      if(code && m.code!==code) return;
+
+      if(from && m.date < from) return;
+      if(to   && m.date > to)   return;
+
+      html+=`
+      <tr>
+        <td>${m.date||""}</td>
+        <td>${m.code}</td>
+        <td>${m.qty}</td>
+        <td>${m.type}</td>
+        <td>${m.source}</td>
+        <td>${m.vendor||m.process||""}</td>
+      </tr>`;
+    });
+
+    movementBody.innerHTML=html;
+
+  });
+
+}
+
+  
 </script>
 
 </body>
