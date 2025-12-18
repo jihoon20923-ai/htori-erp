@@ -2,44 +2,47 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>HTORI ERP – Employee Master</title>
+<title>HTORI ERP Payroll System</title>
 
 <style>
 body{font-family:Arial;background:#f4f6f9;margin:0}
 header{background:#1f3c88;color:#fff;padding:12px 20px;font-size:18px}
-.wrap{padding:20px;max-width:1300px}
-input,select{padding:6px;margin:4px;width:220px}
+.wrap{padding:20px;max-width:1380px}
+
+h2{margin-top:30px}
+input,select{padding:6px;margin:4px;width:200px}
+button{padding:6px 14px;margin:4px;cursor:pointer}
+
 table{border-collapse:collapse;width:100%;background:#fff;margin-top:10px}
 th,td{border:1px solid #ccc;padding:6px}
 th{background:#eee}
 tr:hover{background:#ffffcc;cursor:pointer}
-button{padding:6px 14px;margin:4px}
-</style>
 
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}
+.modal-box{background:#fff;padding:18px;border-radius:8px;width:360px}
+
+</style>
 </head>
 
 <body>
 
-<header>HTORI ERP – Employee Master</header>
+<header>HTORI ERP – Employee & Payroll</header>
 
 <div class="wrap">
 
-<h2>Employee Registration</h2>
+<!-- 직원 UI -->
+<h2>Employees</h2>
 
-<input id="emp_id" placeholder="Employee ID">
+<input id="emp_id" placeholder="ID">
 <input id="emp_name" placeholder="Name">
-<input id="emp_birth" type="date" placeholder="Birthdate">
-<br>
+<input id="emp_birth" type="date">
 <input id="emp_phone" placeholder="Phone">
 <input id="emp_addr" placeholder="Address">
 <select id="emp_rel">
-  <option>Islam</option>
-  <option>Kristen</option>
-  <option>Buddha</option>
-  <option>Hindu</option>
-  <option>Konghucu</option>
-</select>
-<br>
+ <option>Islam</option><option>Kristen</option><option>Buddha</option>
+ <option>Hindu</option><option>Konghucu</option>
+</select><br>
+
 <select id="emp_type">
   <option value="PKWT">PKWT</option>
   <option value="PKWTT">PKWTT</option>
@@ -47,36 +50,77 @@ button{padding:6px 14px;margin:4px}
 </select>
 
 <select id="emp_salary_type">
-  <option value="salary">고정급</option>
-  <option value="hourly">시간제</option>
-  <option value="piece">단가제</option>
+  <option value="salary">Salary</option>
+  <option value="hourly">Hourly</option>
+  <option value="piece">Piece</option>
 </select>
 
-<input id="emp_salary_base" placeholder="Base Salary(Rp)">
-<input id="emp_salary_hour" placeholder="Pay per Hour(Rp)">
-<input id="emp_salary_piece" placeholder="Pay per Piece(Rp)">
+<input id="emp_salary_base" placeholder="Base Salary Rp">
+<input id="emp_salary_hour" placeholder="Pay per Hour Rp">
+<input id="emp_salary_piece" placeholder="Pay per Piece Rp">
 <br>
+
 <input id="emp_bank" placeholder="Bank Name">
 <input id="emp_bank_acc" placeholder="Account No">
-<input id="emp_tax" placeholder="Tax Number">
-<input id="emp_join" type="date" placeholder="Join Date">
-<br>
-<input id="emp_memo" placeholder="Memo" style="width:460px">
+<input id="emp_tax" placeholder="Tax ID">
+<input id="emp_join" type="date">
+<input id="emp_memo" placeholder="Memo" style="width:300px"><br>
 
-<br>
 <button onclick="saveEmployee()">Save</button>
 <button onclick="resetForm()">Reset</button>
+<button onclick="resignEmployee()">Resign</button>
+<button onclick="deleteEmployee()">Delete</button>
 
-<h2>Employee List</h2>
 <table>
-<thead>
-<tr>
-<th>ID</th><th>Name</th><th>Employment</th><th>Salary Type</th><th>Birth</th><th>Bank</th>
-</tr>
-</thead>
+<thead><tr>
+<th>ID</th><th>Name</th><th>Type</th><th>Salary Type</th><th>Bank</th>
+</tr></thead>
 <tbody id="empBody"></tbody>
 </table>
 
+
+<!-- 급여 -->
+<h2>Payroll</h2>
+
+<select id="pay_emp_select"></select>
+
+<button onclick="downloadCSV()">Download CSV</button>
+<button onclick="loadCalendar()">Refresh Calendar</button>
+
+<table>
+<thead><tr><th>Date</th><th>Input</th><th>Daily Sum</th></tr></thead>
+<tbody id="calBody"></tbody>
+</table>
+
+</div>
+
+<!-- 급여 입력 모달 -->
+<div id="payModal" class="modal" style="display:none">
+ <div class="modal-box">
+  <h3 id="pay_date"></h3>
+
+  <label>Type</label><br>
+  <select id="pay_type">
+    <option value="salary">Salary</option>
+    <option value="hourly">Hourly</option>
+    <option value="piece">Piece</option>
+  </select><br>
+
+  <label>Salary Amount</label>
+  <input id="pay_amount" type="number">
+  
+  <label>Hours</label>
+  <input id="pay_hours" type="number">
+
+  <label>Qty</label>
+  <input id="pay_qty" type="number">
+
+  <label>Unit Cost</label>
+  <input id="pay_unit" type="number"><br>
+
+  <button onclick="savePayroll()">Save</button>
+  <button onclick="closePayModal()">Cancel</button>
+ </div>
 </div>
 
 
@@ -92,63 +136,65 @@ firebase.initializeApp({
  databaseURL:"https://htori-erp-38ed1-default-rtdb.asia-southeast1.firebasedatabase.app",
  projectId:"htori-erp-38ed1"
 });
+
 const db=firebase.database();
 
+let emp_status="active";
+
+/* ====================== 직원 저장 ====================== */
 function saveEmployee(){
-  const obj={
-    id:emp_id.value.trim(),
-    name:emp_name.value.trim(),
-    birth:emp_birth.value,
-    phone:emp_phone.value.trim(),
-    addr:emp_addr.value.trim(),
-    religion:emp_rel.value,
-    employment:emp_type.value,
-    salaryType:emp_salary_type.value,
-    baseSalary:+emp_salary_base.value.replace(/,/g,"")||0,
-    payHour:+emp_salary_hour.value.replace(/,/g,"")||0,
-    payPiece:+emp_salary_piece.value.replace(/,/g,"")||0,
-    bank:emp_bank.value.trim(),
-    bankAcc:emp_bank_acc.value.trim(),
-    tax:emp_tax.value.trim(),
-    join:emp_join.value,
-    memo:emp_memo.value.trim()
-  }
-
-  if(!obj.id) return alert("Employee ID required")
-
- db.ref("employees/"+obj.id).set(obj)
- .then(()=>{
-   alert("Saved")
-   resetForm()
-   loadEmployees()
+ const obj={
+   id:emp_id.value.trim(),
+   name:emp_name.value.trim(),
+   birth:emp_birth.value,
+   phone:emp_phone.value,
+   addr:emp_addr.value,
+   religion:emp_rel.value,
+   employment:emp_type.value,
+   salaryType:emp_salary_type.value,
+   baseSalary:+emp_salary_base.value.replace(/,/g,"")||0,
+   payHour:+emp_salary_hour.value.replace(/,/g,"")||0,
+   payPiece:+emp_salary_piece.value.replace(/,/g,"")||0,
+   bank:emp_bank.value,
+   bankAcc:emp_bank_acc.value,
+   tax:emp_tax.value,
+   join:emp_join.value,
+   memo:emp_memo.value,
+   status:emp_status
+ }
+ if(!obj.id) return alert("ID required")
+ db.ref("employees/"+obj.id).set(obj).then(()=>{
+  alert("Saved")
+  resetForm()
+  loadEmployees()
+  loadEmployeeSelect()
  })
 }
 
 function resetForm(){
- document.querySelectorAll("input").forEach(i=>i.value="")
+ document.querySelectorAll("input").forEach(e=>e.value="")
  emp_type.value="PKWT"
  emp_salary_type.value="salary"
+ emp_status="active"
 }
 
+/* ====================== 직원 목록 ====================== */
 function loadEmployees(){
  empBody.innerHTML=""
- db.ref("employees").once("value").then(snap=>{
-   snap.forEach(row=>{
-     const e=row.val()
+ db.ref("employees").once("value").then(s=>{
+   s.forEach(r=>{
+     const e=r.val()
+     if(e.status==="resigned") return
      empBody.innerHTML+=`
        <tr onclick="editEmployee('${e.id}')">
-         <td>${e.id}</td>
-         <td>${e.name}</td>
-         <td>${e.employment}</td>
-         <td>${e.salaryType}</td>
-         <td>${e.birth||""}</td>
-         <td>${e.bank||""}</td>
-       </tr>
-     `
+         <td>${e.id}</td><td>${e.name}</td><td>${e.employment}</td>
+         <td>${e.salaryType}</td><td>${e.bank||""}</td>
+       </tr>`
    })
  })
 }
 
+/* ====================== 직원 수정 ====================== */
 function editEmployee(id){
  db.ref("employees/"+id).once("value").then(s=>{
    const e=s.val()
@@ -168,10 +214,146 @@ function editEmployee(id){
    emp_tax.value=e.tax
    emp_join.value=e.join
    emp_memo.value=e.memo
+   emp_status=e.status
  })
 }
 
+/* ====================== 퇴사 처리 ====================== */
+function resignEmployee(){
+ if(!emp_id.value) return
+ if(!confirm("퇴사 처리?")) return
+ db.ref("employees/"+emp_id.value).update({
+  status:"resigned",
+  resignedDate:new Date().toISOString()
+ }).then(()=>{
+  alert("퇴사 완료")
+  loadEmployees()
+  loadEmployeeSelect()
+ })
+}
+
+/* ====================== 직원 삭제 ====================== */
+function deleteEmployee(){
+ if(!emp_id.value) return
+ if(!confirm("정말 삭제할까요? 기록 소실됨")) return
+ db.ref("employees/"+emp_id.value).remove()
+ .then(()=>{
+   alert("삭제 완료")
+   resetForm()
+   loadEmployees()
+   loadEmployeeSelect()
+ })
+}
+
+/* ====================== 급여 ====================== */
+function loadEmployeeSelect(){
+ pay_emp_select.innerHTML="<option value=''>직원 선택</option>"
+ db.ref("employees").once("value").then(s=>{
+   s.forEach(r=>{
+     const e=r.val()
+     if(e.status==="resigned") return
+     pay_emp_select.innerHTML+=`<option value="${e.id}">${e.id}-${e.name}</option>`
+   })
+ })
+}
+
+// 달력
+function loadCalendar(){
+ const y=new Date().getFullYear()
+ const m=new Date().getMonth()+1
+ const days=new Date(y,m,0).getDate()
+
+ calBody.innerHTML=""
+ for(let d=1; d<=days; d++){
+   const date=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+   calBody.innerHTML+=`
+    <tr>
+      <td>${date}</td>
+      <td><button onclick="openPayModal('${date}')">입력</button></td>
+      <td id="sum-${date}"></td>
+    </tr>`
+ }
+ loadDailySum()
+}
+
+function rupiah(n){
+ return "Rp "+Number(n||0).toLocaleString("id-ID")
+}
+
+function openPayModal(date){
+ if(!pay_emp_select.value) return alert("직원 선택 필요")
+ pay_date.innerText=date
+ pay_amount.value=""
+ pay_hours.value=""
+ pay_qty.value=""
+ pay_unit.value=""
+ payModal.style.display="flex"
+}
+
+function closePayModal(){
+ payModal.style.display="none"
+}
+
+// 저장
+function savePayroll(){
+ const obj={
+  employeeId:pay_emp_select.value,
+  date:pay_date.innerText,
+  type:pay_type.value,
+  hours:+pay_hours.value||0,
+  qty:+pay_qty.value||0,
+  unitCost:+pay_unit.value||0,
+  amount:+pay_amount.value||0,
+  createdAt:new Date().toISOString()
+ }
+
+ if(obj.type==="hourly") obj.amount=obj.hours*obj.unitCost
+ if(obj.type==="piece") obj.amount=obj.qty*obj.unitCost
+
+ db.ref("payroll_log").push(obj).then(()=>{
+  closePayModal()
+  loadDailySum()
+ })
+}
+
+// 일자별 합계
+function loadDailySum(){
+ db.ref("payroll_log").once("value").then(s=>{
+   const rows=s.val()||{}
+   const map={}
+   Object.values(rows).forEach(r=>{
+     const d=r.date
+     map[d]=(map[d]||0)+(r.amount||0)
+   })
+   Object.keys(map).forEach(d=>{
+     document.getElementById("sum-"+d).innerText=rupiah(map[d])
+   })
+ })
+}
+
+
+// CSV 다운로드
+function downloadCSV(){
+ db.ref("payroll_log").once("value").then(s=>{
+   let csv="employee,date,type,amount\n"
+   s.forEach(r=>{
+     const v=r.val()
+     csv+=`${v.employeeId},${v.date},${v.type},${v.amount}\n`
+   })
+   const blob=new Blob([csv],{type:"text/csv"})
+   const a=document.createElement("a")
+   a.href=URL.createObjectURL(blob)
+   a.download="payroll.csv"
+   a.click()
+ })
+}
+
+
 loadEmployees()
+loadEmployeeSelect()
+loadCalendar()
+
 </script>
+
 </body>
 </html>
