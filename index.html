@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>HTORI ERP CORE</title>
+<title>HTORI ERP CORE – STOCK ENGINE</title>
 
 <style>
 body{font-family:Arial;background:#f4f6f9;margin:0}
@@ -15,16 +15,18 @@ th,td{border:1px solid #ccc;padding:6px}
 th{background:#eee}
 .danger{color:red;cursor:pointer}
 </style>
+
 </head>
 
 <body>
 
-<header>HTORI ERP – STOCK / PRODUCTION / DEFECT / OUTSOURCE</header>
+<header>HTORI ERP – STOCK ENGINE (CORE TEST MODE)</header>
 
 <div class="wrap">
 
+
 <!-- ================= PURCHASE ================= -->
-<h2>Purchase (입고)</h2>
+<h2>Purchase 입고</h2>
 <input type="date" id="p_date">
 <input id="p_code" placeholder="Code">
 <input id="p_name" placeholder="Name">
@@ -36,36 +38,48 @@ th{background:#eee}
 <tbody id="purchaseBody"></tbody>
 </table>
 
+
+
 <!-- ================= PRODUCTION ================= -->
-<h2>Production (공정)</h2>
+<h2>Production 공정</h2>
 <select id="prod_process">
   <option value="P01">P01</option>
   <option value="P02">P02</option>
 </select>
-<input id="prod_in" placeholder="Input Code">
-<input id="prod_out" placeholder="Output Code">
+<input id="prod_in" placeholder="Input Code (소모)">
+<input id="prod_out" placeholder="Output Code (생성)">
 <input type="number" id="prod_qty" placeholder="Qty">
 <button onclick="saveProduction()">Run</button>
 
+
+
 <!-- ================= DEFECT ================= -->
-<h2>Defect (불량)</h2>
+<h2>Defect 불량</h2>
 <input id="def_code" placeholder="Code">
 <input type="number" id="def_qty" placeholder="Qty">
-<button onclick="saveDefect()">Defect</button>
+<button onclick="saveDefect()">Defect Out</button>
+
 
 <!-- ================= OUTSOURCE ================= -->
-<h2>Outsource</h2>
+<h2>Outsource 외주</h2>
+
 <select id="os_type">
   <option value="OUT">Send</option>
   <option value="IN">Receive</option>
 </select>
+
 <input id="os_vendor" placeholder="Vendor">
 <input id="os_code" placeholder="Code">
 <input type="number" id="os_qty" placeholder="Qty">
 <button onclick="saveOutsource()">Save</button>
 
+
+
 <!-- ================= STOCK ================= -->
-<h2>Stock (Calculated)</h2>
+<h2>Stock 현재 재고 (자동 계산)</h2>
+
+<button onclick="recalcAllStock()">전체 재계산 (sync)</button>
+
 <table>
 <thead><tr><th>Code</th><th>Name</th><th>Qty</th></tr></thead>
 <tbody id="stockBody"></tbody>
@@ -73,105 +87,269 @@ th{background:#eee}
 
 </div>
 
+
 <!-- Firebase v8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
+
 firebase.initializeApp({
   apiKey:"AIzaSyARxh0wfAo2RMz_-3KsWUUQYfND_F3_3fI",
   authDomain:"htori-erp-38ed1.firebaseapp.com",
   databaseURL:"https://htori-erp-38ed1-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId:"htori-erp-38ed1"
 });
-const db = firebase.database();
 
-/* ================= CORE FUNCTIONS ================= */
+const db=firebase.database();
 
+
+
+/* =========================================================
+   MOVEMENT 기록 저장 (재고는 계산 데이터)
+========================================================= */
 function addMovement(obj){
-  db.ref("stock_movement").push(obj).then(()=>recalcStock(obj.code));
+
+  const ref = db.ref("stock_movement").push();
+
+  // name 존재하면 materials name도 유지
+  if(obj.name){
+    db.ref("materials/"+obj.code+"/name").set(obj.name);
+  }
+
+  ref.set(obj).then(()=>{
+    recalcStock(obj.code);
+  });
+
 }
 
+
+
+/* =========================================================
+   개별 자재 재고 계산
+========================================================= */
 function recalcStock(code){
-  db.ref("stock_movement").orderByChild("code").equalTo(code).once("value").then(snap=>{
-    let qty=0,name="";
-    snap.forEach(c=>{
+
+  db.ref("stock_movement").orderByChild("code").equalTo(code)
+  .once("value")
+  .then(s=>{
+
+    let qty = 0;
+    let name="";
+
+    s.forEach(c=>{
       const m=c.val();
-      name=m.name||name;
-      qty += (m.type==="IN"?m.qty:-m.qty);
+      if(m.name) name=m.name;
+      qty += (m.type==="IN" ? m.qty : -m.qty);
     });
+
     db.ref("stock/"+code).set({code,name,qty});
     showStock();
+
   });
+
 }
 
-/* ================= PURCHASE ================= */
+
+
+/* =========================================================
+   PURCHASE (입고)
+========================================================= */
 function savePurchase(){
-  const date=p_date.value,code=p_code.value.trim(),name=p_name.value.trim(),qty=+p_qty.value;
+
+  const date=p_date.value;
+  const code=p_code.value.trim();
+  const name=p_name.value.trim();
+  const qty=+p_qty.value;
+
   const ref=db.ref("purchase").push();
+
   ref.set({date,code,name,qty});
-  addMovement({date,code,name,qty,type:"IN",source:"PURCHASE",refId:ref.key});
+
+  addMovement({
+    date,code,name,qty,
+    type:"IN",
+    source:"PURCHASE",
+    refId:ref.key
+  });
+
   showPurchase();
+
 }
+
+
 
 function showPurchase(){
+
   purchaseBody.innerHTML="";
+
   db.ref("purchase").once("value").then(s=>{
+
     s.forEach(c=>{
       const p=c.val();
-      purchaseBody.innerHTML+=`<tr>
-      <td>${p.date}</td><td>${p.code}</td><td>${p.name}</td><td>${p.qty}</td>
-      <td class="danger" onclick="delPurchase('${c.key}','${p.code}')">Del</td></tr>`;
+      purchaseBody.innerHTML+=`
+
+      <tr>
+        <td>${p.date}</td>
+        <td>${p.code}</td>
+        <td>${p.name}</td>
+        <td>${p.qty}</td>
+        <td class="danger" onclick="delPurchase('${c.key}','${p.code}')">
+            삭제
+        </td>
+      </tr>
+
+      `;
     });
+
   });
+
 }
+
+
 
 function delPurchase(k,code){
+
   db.ref("purchase/"+k).remove();
-  db.ref("stock_movement").orderByChild("refId").equalTo(k).once("value").then(s=>{
-    s.forEach(c=>c.ref.remove());
+
+  db.ref("stock_movement")
+  .orderByChild("refId")
+  .equalTo(k)
+  .once("value")
+  .then(s=>{
+
+    s.forEach(c=>{
+      c.ref.remove();
+    });
+
     recalcStock(code);
     showPurchase();
+
   });
+
 }
 
-/* ================= PRODUCTION ================= */
+
+
+/* =========================================================
+   공정 생산: 소비 → 생성
+========================================================= */
 function saveProduction(){
-  const p=prod_process.value,inC=prod_in.value,outC=prod_out.value,qty=+prod_qty.value;
+
+  const p=prod_process.value;
+  const inC=prod_in.value.trim();
+  const outC=prod_out.value.trim();
+  const qty=+prod_qty.value;
+
   addMovement({code:inC,qty,type:"OUT",source:"PRODUCTION",process:p});
   addMovement({code:outC,qty,type:"IN",source:"PRODUCTION",process:p});
+
 }
 
-/* ================= DEFECT ================= */
+
+
+/* =========================================================
+   DEFECT 불량
+========================================================= */
 function saveDefect(){
-  addMovement({code:def_code.value,qty:+def_qty.value,type:"OUT",source:"DEFECT"});
-}
-
-/* ================= OUTSOURCE ================= */
-function saveOutsource(){
   addMovement({
-    code:os_code.value,
-    qty:+os_qty.value,
-    type:os_type.value,
-    source:"OUTSOURCE",
-    vendor:os_vendor.value
+    code:def_code.value.trim(),
+    qty:+def_qty.value,
+    type:"OUT",
+    source:"DEFECT"
   });
 }
 
-/* ================= STOCK ================= */
+
+
+/* =========================================================
+   OUTSOURCE 외주
+========================================================= */
+function saveOutsource(){
+
+  addMovement({
+    code:os_code.value.trim(),
+    qty:+os_qty.value,
+    type:(os_type.value==="OUT" ? "OUT":"IN"),
+    source:"OUTSOURCE",
+    vendor:os_vendor.value.trim()
+  });
+
+}
+
+
+
+/* =========================================================
+   STOCK LIST
+========================================================= */
 function showStock(){
+
   stockBody.innerHTML="";
+
   db.ref("stock").once("value").then(s=>{
+
     s.forEach(c=>{
       const v=c.val();
-      stockBody.innerHTML+=`<tr><td>${v.code}</td><td>${v.name||""}</td><td>${v.qty}</td></tr>`;
+
+      db.ref("materials/"+v.code+"/name").once("value")
+      .then(n=>{
+
+        stockBody.innerHTML+=`
+
+        <tr>
+          <td>${v.code}</td>
+          <td>${n.val()||""}</td>
+          <td>${v.qty}</td>
+        </tr>
+
+        `;
+
+      });
+
     });
+
   });
+
 }
 
-/* ================= INIT ================= */
+
+
+/* =========================================================
+   전체 재고 재계산
+========================================================= */
+function recalcAllStock(){
+
+  db.ref("stock_movement").once("value").then(s=>{
+
+    const map={};
+
+    s.forEach(c=>{
+      const m=c.val();
+
+      if(!map[m.code]) map[m.code]=0;
+
+      map[m.code] += (m.type==="IN"?m.qty:-m.qty);
+
+    });
+
+    Object.keys(map).forEach(code=>{
+      db.ref("stock/"+code).update({code,qty:map[code]});
+    });
+
+    showStock();
+
+  });
+
+}
+
+
+
+/* =========================================================
+   INIT 화면 렌더링
+========================================================= */
 showPurchase();
 showStock();
+
 </script>
 
 </body>
