@@ -2,66 +2,67 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>HTORI ERP v1 – CORE ENGINE CLEAN</title>
+<title>HTORI ERP – CORE + PAYROLL</title>
 
 <style>
 body{margin:0;font-family:Arial;background:#f4f6f9}
 header{background:#1f3c88;color:#fff;padding:12px 20px;font-size:18px}
-
 .layout{display:flex;height:100vh}
 
-/* LEFT MENU */
 .sidebar{
-  width:220px;
-  background:#11151a;
-  color:#fff;
-  padding:14px;
+  width:220px;background:#11151a;color:#fff;padding:14px;
 }
 .menu-btn{
-  width:100%;padding:10px;margin-bottom:6px;background:#222;border:0;color:#fff;cursor:pointer;text-align:left;border-radius:4px;
+  width:100%;padding:10px;margin-bottom:6px;background:#222;border:0;color:#fff;cursor:pointer;
+  text-align:left;border-radius:4px;
 }
-.menu-btn:hover{background:#333}
 .menu-btn.active{background:#1f3c88}
 
-/* RIGHT CONTENT */
-.content{
-  flex:1;padding:20px;overflow-y:auto;
-}
+.content{flex:1;padding:20px;overflow-y:auto;}
+
 table{border-collapse:collapse;width:100%;background:#fff;margin-top:10px}
 th,td{border:1px solid #ccc;padding:6px}
 th{background:#eee}
-input,select,button{padding:6px;margin:4px;width:200px}
-.danger{color:red;cursor:pointer}
-</style>
 
+input,select,button{padding:6px;margin:4px;width:200px}
+.btn{cursor:pointer}
+
+tr:hover{background:#f5faff}
+
+.modal{
+ position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.3);
+ display:flex;align-items:center;justify-content:center;
+}
+.modal-card{
+ background:#fff;padding:20px;width:360px;border-radius:8px;
+}
+
+</style>
 </head>
 <body>
 
-<header>HTORI ERP – CORE v1</header>
+<header>HTORI ERP CORE + PAYROLL v1</header>
 
 <div class="layout">
 
-<!-- LEFT MENU -->
 <aside class="sidebar">
-
-  <button class="menu-btn active" onclick="showPage('purchase')">Purchase 입고</button>
-  <button class="menu-btn" onclick="showPage('production')">Production 공정</button>
-  <button class="menu-btn" onclick="showPage('defect')">Defect 불량</button>
-  <button class="menu-btn" onclick="showPage('outsource')">Outsource 외주</button>
-  <button class="menu-btn" onclick="showPage('stock')">Stock 재고</button>
-  <button class="menu-btn" onclick="showPage('movement')">Movement 로그</button>
-  <button class="menu-btn" onclick="showPage('employee')">Employees 직원등록</button>
-
+  <button class="menu-btn active" onclick="showPage('purchase')">Purchase</button>
+  <button class="menu-btn" onclick="showPage('production')">Production</button>
+  <button class="menu-btn" onclick="showPage('defect')">Defect</button>
+  <button class="menu-btn" onclick="showPage('outsource')">Outsource</button>
+  <button class="menu-btn" onclick="showPage('stock')">Stock</button>
+  <button class="menu-btn" onclick="showPage('movement')">Movement</button>
+  <button class="menu-btn" onclick="showPage('employee')">Employees / Payroll</button>
 </aside>
 
 
-<!-- RIGHT CONTENT -->
 <main id="content" class="content"></main>
 
 </div>
 
 
-<!-- Firebase v8 -->
+
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
@@ -76,30 +77,26 @@ firebase.initializeApp({
 const db=firebase.database();
 
 
-/*=========================================================
- GENERAL PAGE SWITCH
-=========================================================*/
+/* PAGE SWITCH */
 function showPage(key){
 
   document.querySelectorAll(".menu-btn").forEach(b=>b.classList.remove("active"));
   document.querySelector(`button[onclick="showPage('${key}')"]`).classList.add("active");
 
+  if(key==="employee") return renderEmployee();
   if(key==="purchase") return renderPurchase();
   if(key==="production") return renderProduction();
   if(key==="defect") return renderDefect();
   if(key==="outsource") return renderOutsource();
   if(key==="stock") return renderStock();
   if(key==="movement") return renderMovement();
-  if(key==="employee") return renderEmployee();
 }
 
 
-/*=========================================================
- FIREBASE MOVEMENT CORE
-=========================================================*/
+
+/* ================= STOCK MOVEMENT CORE */
 function addMovement(o){
-  const ref=db.ref("stock_movement").push();
-  ref.set(o).then(()=>recalcStock(o.code));
+  db.ref("stock_movement").push(o).then(()=>recalcStock(o.code));
 }
 
 function recalcStock(code){
@@ -118,17 +115,14 @@ function recalcStock(code){
 }
 
 
-/*=========================================================
- PURCHASE
-=========================================================*/
+/* ================= PURCHASE */
 function renderPurchase(){
 content.innerHTML=`
-<h2>입고 Purchase</h2>
-
-<input type="date" id="p_date">
+<h2>입고</h2>
+<input id="p_date" type="date">
 <input id="p_code" placeholder="Code">
 <input id="p_name" placeholder="Name">
-<input type="number" id="p_qty" placeholder="Qty">
+<input id="p_qty" type="number" placeholder="Qty">
 <button onclick="savePurchase()">Save</button>
 
 <table>
@@ -143,28 +137,28 @@ function savePurchase(){
   const date=p_date.value,code=p_code.value,name=p_name.value,qty=+p_qty.value;
   const ref=db.ref("purchase").push();
   ref.set({date,code,name,qty});
-  addMovement({date,code,qty,type:"IN",source:"PURCHASE",refId:ref.key});
+  addMovement({refId:ref.key,date,code,qty,type:"IN",source:"PURCHASE"});
   loadPurchase();
 }
 
 function loadPurchase(){
+  purchaseBody.innerHTML="";
   db.ref("purchase").once("value").then(s=>{
-    purchaseBody.innerHTML="";
     s.forEach(c=>{
       const v=c.val();
       purchaseBody.innerHTML+=`
       <tr>
-        <td>${v.date}</td><td>${v.code}</td><td>${v.name}</td><td>${v.qty}</td>
-        <td class="danger" onclick="delPurchase('${c.key}','${v.code}')">Del</td>
-      </tr>`;
+      <td>${v.date}</td><td>${v.code}</td><td>${v.name}</td><td>${v.qty}</td>
+      <td class="danger" onclick="delPurchase('${c.key}','${v.code}')">Del</td>
+      </tr>
+      `;
     });
   });
 }
 
 function delPurchase(k,code){
   db.ref("purchase/"+k).remove();
-  db.ref("stock_movement")
-    .orderByChild("refId").equalTo(k)
+  db.ref("stock_movement").orderByChild("refId").equalTo(k)
     .once("value").then(s=>{
       s.forEach(c=>c.ref.remove());
       recalcStock(code);
@@ -173,34 +167,29 @@ function delPurchase(k,code){
 }
 
 
-/*=========================================================
- PRODUCTION
-=========================================================*/
+/* ================= PRODUCTION */
 function renderProduction(){
 content.innerHTML=`
-<h2>Production 공정</h2>
-
+<h2>공정</h2>
 <input id="prod_in" placeholder="소모 Code">
 <input id="prod_out" placeholder="생성 Code">
-<input type="number" id="prod_qty" placeholder="Qty">
-<button onclick="saveProduction()">Run</button>
+<input id="prod_qty" type="number" placeholder="Qty">
+<button onclick="runProduction()">Run</button>
 `;
 }
 
-function saveProduction(){
+function runProduction(){
   addMovement({code:prod_in.value,qty:+prod_qty.value,type:"OUT",source:"PRODUCTION"});
   addMovement({code:prod_out.value,qty:+prod_qty.value,type:"IN",source:"PRODUCTION"});
 }
 
 
-/*=========================================================
- DEFECT
-=========================================================*/
+/* ================= DEFECT */
 function renderDefect(){
 content.innerHTML=`
-<h2>불량 처리</h2>
+<h2>불량</h2>
 <input id="def_code" placeholder="Code">
-<input type="number" id="def_qty" placeholder="Qty">
+<input id="def_qty" type="number" placeholder="Qty">
 <button onclick="saveDefect()">Save</button>
 `;
 }
@@ -209,20 +198,14 @@ function saveDefect(){
 }
 
 
-/*=========================================================
- OUTSOURCE
-=========================================================*/
+/* ================= OUTSOURCE */
 function renderOutsource(){
 content.innerHTML=`
-<h2>외주 입/출</h2>
-
-<select id="os_type">
-<option value="OUT">Send</option>
-<option value="IN">Receive</option>
-</select>
+<h2>외주</h2>
+<select id="os_type"><option value="OUT">Send</option><option value="IN">Receive</option></select>
 <input id="os_vendor" placeholder="Vendor">
 <input id="os_code" placeholder="Code">
-<input type="number" id="os_qty" placeholder="Qty">
+<input id="os_qty" type="number" placeholder="Qty">
 <button onclick="saveOutsource()">Save</button>
 `;
 }
@@ -231,117 +214,200 @@ function saveOutsource(){
     code:os_code.value,
     qty:+os_qty.value,
     type:os_type.value==="OUT"?"OUT":"IN",
-    source:"OUTSOURCE",
-    vendor:os_vendor.value
+    vendor:os_vendor.value,
+    source:"OUTSOURCE"
   });
 }
 
 
-/*=========================================================
- STOCK
-=========================================================*/
+/* ================= STOCK */
 function renderStock(){
 content.innerHTML=`
-<h2>재고 Stock</h2>
+<h2>재고</h2>
 <table>
-<thead><tr><th style="width:120px">Code</th><th>Qty</th></tr></thead>
+<thead><tr><th>Code</th><th>Qty</th></tr></thead>
 <tbody id="stockBody"></tbody>
-</table>
-`;
+</table>`;
 loadStock();
 }
 
 function loadStock(){
+  stockBody.innerHTML="";
   db.ref("stock").once("value").then(s=>{
-    stockBody.innerHTML="";
     s.forEach(c=>{
-      const v=c.val();
-      stockBody.innerHTML+=`
-      <tr><td>${v.code}</td><td>${v.qty}</td></tr>`;
+      stockBody.innerHTML+=`<tr><td>${c.val().code}</td><td>${c.val().qty}</td></tr>`;
     });
   });
 }
 
 
-/*=========================================================
- MOVEMENT
-=========================================================*/
+/* ================= MOVEMENT */
 function renderMovement(){
 content.innerHTML=`
-<h2>Movement 로그</h2>
+<h2>Movement</h2>
 <table>
 <thead><tr><th>Date</th><th>Code</th><th>Qty</th><th>Type</th><th>Source</th><th>Vendor</th></tr></thead>
-<tbody id="movementBody"></tbody>
+<tbody id="moveBody"></tbody>
 </table>`;
 loadMovement();
 }
 
 function loadMovement(){
-  db.ref("stock_movement").limitToLast(200).once("value").then(s=>{
-    movementBody.innerHTML="";
+  moveBody.innerHTML="";
+  db.ref("stock_movement").limitToLast(300).once("value").then(s=>{
     s.forEach(c=>{
       const m=c.val();
-      movementBody.innerHTML+=`
-      <tr>
-        <td>${m.date||""}</td>
-        <td>${m.code}</td>
-        <td>${m.qty}</td>
-        <td>${m.type}</td>
-        <td>${m.source}</td>
-        <td>${m.vendor||""}</td>
-      </tr>`;
+      moveBody.innerHTML+=`
+      <tr><td>${m.date||""}</td><td>${m.code}</td><td>${m.qty}</td><td>${m.type}</td><td>${m.source}</td><td>${m.vendor||""}</td></tr>`;
     });
   });
 }
 
 
-/*=========================================================
- EMPLOYEE 등록 (종교 포함)
-=========================================================*/
+/* ======================================================
+   EMPLOYEE + PAYROLL (A 기능 구현)
+======================================================*/
+let currentEmpKey=null;
+
 function renderEmployee(){
 content.innerHTML=`
 
-<h2>직원 등록</h2>
+<h2>직원 등록 및 급여</h2>
 
-<input id="emp_id" placeholder="Employee ID">
+<div>
+<input id="emp_id" placeholder="ID">
 <input id="emp_name" placeholder="Name">
-<input id="emp_phone" placeholder="Phone">
-<input id="emp_address" placeholder="Address">
-<input id="emp_religion" placeholder="Religion (종교)">
-<button onclick="saveEmployee()">Save</button>
+<input id="emp_birth" type="date" placeholder="Birth">
+<select id="emp_type">
+<option>정직원</option><option>비정규직</option><option>인턴</option>
+</select>
 
+<select id="emp_paytype">
+<option value="fix">고정급</option>
+<option value="hour">시간제</option>
+<option value="piece">단가제</option>
+</select>
+
+<input id="emp_base" type="number" placeholder="기본급">
+<input id="emp_hour" type="number" placeholder="시간당단가">
+<input id="emp_piece" type="number" placeholder="단가(개당)">
+<input id="emp_bank" placeholder="Bank">
+<input id="emp_account" placeholder="Account">
+<input id="emp_tax" placeholder="TAX number">
+<input id="emp_address" placeholder="Address">
+<input id="emp_phone" placeholder="Phone">
+<input id="emp_religion" placeholder="Religion">
+<textarea id="emp_memo" placeholder="Memo"></textarea>
+
+<button onclick="saveEmployee()">Save/Update</button>
+</div>
+
+<h3>직원 목록</h3>
 <table>
-<thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Address</th><th>Religion</th></tr></thead>
+<thead><tr><th>ID</th><th>Name</th><th>PayType</th><th>Base</th><th>Pay</th></tr></thead>
 <tbody id="empBody"></tbody>
 </table>
+
+<div id="payArea"></div>
 
 `;
 loadEmployee();
 }
 
+
+/* EMPLOYEE SAVE OR UPDATE */
 function saveEmployee(){
-  db.ref("employees").push({
+
+  const obj={
     id:emp_id.value,
     name:emp_name.value,
-    phone:emp_phone.value,
+    birth:emp_birth.value,
+    type:emp_type.value,
+    payType:emp_paytype.value,
+    base:+emp_base.value||0,
+    rateHour:+emp_hour.value||0,
+    ratePiece:+emp_piece.value||0,
+    bank:emp_bank.value,
+    account:emp_account.value,
+    tax:emp_tax.value,
     address:emp_address.value,
-    religion:emp_religion.value
-  }).then(()=>loadEmployee());
+    phone:emp_phone.value,
+    religion:emp_religion.value,
+    memo:emp_memo.value
+  };
+
+  if(currentEmpKey){
+    db.ref("employees/"+currentEmpKey).update(obj).then(()=>loadEmployee());
+  }else{
+    db.ref("employees").push(obj).then(()=>loadEmployee());
+  }
+  currentEmpKey=null;
+  clearEmpForm();
+}
+
+function clearEmpForm(){
+  document.querySelectorAll("#emp_id,#emp_name,#emp_birth,#emp_base,#emp_hour,#emp_piece,#emp_bank,#emp_account,#emp_tax,#emp_address,#emp_phone,#emp_religion,#emp_memo").forEach(el=>el.value="");
 }
 
 function loadEmployee(){
+  empBody.innerHTML="";
   db.ref("employees").once("value").then(s=>{
-    empBody.innerHTML="";
     s.forEach(c=>{
       const v=c.val();
       empBody.innerHTML+=`
-      <tr>
-        <td>${v.id}</td>
-        <td>${v.name}</td>
-        <td>${v.phone}</td>
-        <td>${v.address}</td>
-        <td>${v.religion}</td>
+      <tr onclick="openPayroll('${c.key}','${v.id}','${v.name}','${v.payType}')">
+        <td>${v.id}</td><td>${v.name}</td><td>${v.payType}</td><td>${v.base||0}</td><td>${v.rateHour||v.ratePiece||""}</td>
       </tr>`;
+    });
+  });
+}
+
+/* PAYROLL CLICK */
+function openPayroll(key,id,name,type){
+
+  currentEmpKey=key;
+
+  payArea.innerHTML=`
+  <h3>Payroll – ${id} ${name}</h3>
+  <input type="date" id="pay_date">
+  <input id="pay_qty" type="number" placeholder="${type==='hour'?'Hours':'Qty'}">
+  <button onclick="savePayroll('${id}')">Save Payroll</button>
+
+  <table>
+  <thead><tr><th>Date</th><th>Qty/Hours</th><th>Total</th></tr></thead>
+  <tbody id="payBody"></tbody>
+  </table>
+  `;
+
+  loadPayroll(id);
+}
+
+function savePayroll(id){
+  const date=pay_date.value;
+  const qty=+pay_qty.value;
+  
+  db.ref("employees/"+currentEmpKey).once("value").then(s=>{
+    const emp=s.val();
+    let rate=0,total=0;
+
+    if(emp.payType==="hour"){rate=emp.rateHour;total=qty*rate;}
+    else if(emp.payType==="piece"){rate=emp.ratePiece;total=qty*rate;}
+    else{ total=emp.base; }
+
+    db.ref("pay_log").push({
+      empId:id,date,qty,rate,total,updatedAt:new Date().toISOString()
+    }).then(()=>loadPayroll(id));
+
+  });
+}
+
+function loadPayroll(id){
+  payBody.innerHTML="";
+  db.ref("pay_log").orderByChild("empId").equalTo(id).once("value").then(s=>{
+    s.forEach(c=>{
+      const v=c.val();
+      payBody.innerHTML+=`
+      <tr><td>${v.date}</td><td>${v.qty}</td><td>${v.total}</td></tr>`;
     });
   });
 }
