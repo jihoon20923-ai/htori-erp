@@ -86,6 +86,7 @@ tr:hover{background:#ffffcc;cursor:pointer}
 
 <button onclick="downloadCSV()">Download CSV</button>
 <button onclick="loadCalendar()">Refresh Calendar</button>
+<button onclick="sumPayroll()">직원 급여 합계 보기</button>
 
 <table>
 <thead><tr><th>Date</th><th>Input</th><th>Daily Sum</th></tr></thead>
@@ -185,10 +186,15 @@ function loadEmployees(){
    s.forEach(r=>{
      const e=r.val()
      if(e.status==="resigned") return
-     empBody.innerHTML+=`
-       <tr onclick="editEmployee('${e.id}')">
-         <td>${e.id}</td><td>${e.name}</td><td>${e.employment}</td>
-         <td>${e.salaryType}</td><td>${e.bank||""}</td>
+    empBody.innerHTML+=`
+       <tr>
+         <td>${e.id}</td>
+         <td>${e.name}</td>
+         <td>${e.employment}</td>
+         <td>${e.salaryType}</td>
+         <td>${e.bank||""}</td>
+         <td><button onclick="openEditModal('${e.id}')">수정</button></td>
+         <th>Edit</th>
        </tr>`
    })
  })
@@ -290,6 +296,84 @@ function openPayModal(date){
  payModal.style.display="flex"
 }
 
+ function saveEditedEmployee(){
+ const obj={
+   id:edit_id.value.trim(),
+   name:edit_name.value.trim(),
+   phone:edit_phone.value.trim(),
+   addr:edit_addr.value.trim(),
+   birth:edit_birth.value,
+   religion:edit_rel.value.trim(),
+   join:edit_join.value,
+   employment:edit_empType.value,
+   salaryType:edit_salType.value,
+   baseSalary:+edit_salBase.value||0,
+   payHour:+edit_salHour.value||0,
+   payPiece:+edit_salPiece.value||0,
+   bank:edit_bank.value,
+   bankAcc:edit_acc.value,
+   tax:edit_tax.value,
+   memo:edit_memo.value,
+   status:"active"
+ }
+
+ db.ref("employees/"+currentEditId).set(obj).then(()=>{
+   alert("수정 완료")
+   closeEmpModal()
+   loadEmployees()
+   loadEmployeeSelect()
+ })
+}
+function sumPayroll(){
+ db.ref("payroll_log").once("value").then(s=>{
+   const rows=s.val()||{}
+
+   const sumPKWT=0, sumPKWTT=0, sumTrainer=0
+   let tPKWT=0,tPKWTT=0,tTR=0
+
+   Object.values(rows).forEach(r=>{
+     const emp=r.employeeId
+     if(!emp) return
+
+     // 직원 정보 lookup
+     db.ref("employees/"+emp).once("value").then(es=>{
+       const e=es.val()
+       if(!e) return
+
+       if(e.employment==="PKWT") tPKWT+=r.amount
+       if(e.employment==="PKWTT") tPKWTT+=r.amount
+       if(e.employment==="Trainer") tTR+=r.amount
+
+       showTotals(tPKWT,tPKWTT,tTR)
+     })
+   })
+ })
+}
+
+// 표시 + csv 다운로드 제공
+function showTotals(a,b,c){
+ const div=document.createElement("div")
+ div.innerHTML=`
+   <h3>월별 합계</h3>
+   PKWT: Rp ${a.toLocaleString('id-ID')}<br>
+   PKWTT: Rp ${b.toLocaleString('id-ID')}<br>
+   Trainer: Rp ${c.toLocaleString('id-ID')}<br>
+   Total: Rp ${(a+b+c).toLocaleString('id-ID')}<br><br>
+   <button onclick="downloadTotalCSV(${a},${b},${c})">CSV Download</button>
+ `
+ document.body.appendChild(div)
+}
+
+function downloadTotalCSV(a,b,c){
+ let csv="PKWT,PKWTT,Trainer,Total\n"
+ csv+=`${a},${b},${c},${a+b+c}`
+ const blob=new Blob([csv],{type:"text/csv"})
+ const aTag=document.createElement("a")
+ aTag.href=URL.createObjectURL(blob)
+ aTag.download="payrollTotal.csv"
+ aTag.click()
+}
+
 function closePayModal(){
  payModal.style.display="none"
 }
@@ -354,6 +438,14 @@ loadEmployeeSelect()
 loadCalendar()
 
 </script>
-
+<div id="empModal" class="modal" style="display:none">
+ <div class="modal-box">
+   <h3>직원 수정</h3>
+   <div id="editEmpFields"></div>
+   <button onclick="saveEditedEmployee()">저장</button>
+   <button onclick="closeEmpModal()">취소</button>
+ </div>
+</div>
+ 
 </body>
 </html>
