@@ -333,6 +333,69 @@ function loadStock(){
    })
  })
 }
+/* ================= PRODUCTION ================= */
+function saveProduction(){
+  const p=prod_process.value,
+        inC=prod_in.value.trim(),
+        outC=prod_out.value.trim(),
+        qty=+prod_qty.value;
+
+  if(!inC||!outC||!qty){ alert("Check inputs"); return}
+
+  addMove({
+    date:new Date().toISOString().slice(0,10),
+    code:inC,
+    qty,
+    unit:"PCS",
+    type:"OUT",
+    source:"PRODUCTION",
+    process:p
+  });
+
+  addMove({
+    date:new Date().toISOString().slice(0,10),
+    code:outC,
+    qty,
+    unit:"PCS",
+    type:"IN",
+    source:"PRODUCTION",
+    process:p
+  });
+}
+
+/* ================= DEFECT ================= */
+function saveDefect(){
+  const code=def_code.value.trim(),
+        qty=+def_qty.value;
+
+  addMove({
+    date:new Date().toISOString().slice(0,10),
+    code,
+    qty,
+    unit:"PCS",
+    type:"OUT",
+    source:"DEFECT",
+    memo:def_memo.value,
+    process:def_proc.value
+  });
+}
+
+/* ================= OUTSOURCE ================= */
+function saveOutsource(){
+  const code=os_code.value.trim(),
+        qty=+os_qty.value,
+        type=os_type.value; // OUT or IN
+
+  addMove({
+    date:new Date().toISOString().slice(0,10),
+    code,
+    qty,
+    unit:"PCS",
+    type,
+    vendor:os_vendor.value,
+    source:"OUTSOURCE"
+  });
+}
 
 
 
