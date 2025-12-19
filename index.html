@@ -2,174 +2,181 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>HTORI ERP CORE – Enhanced</title>
+<title>HTORI ERP – Improved Layout</title>
 
 <style>
 body{font-family:Arial;background:#f4f6f9;margin:0}
 header{background:#1f3c88;color:#fff;padding:12px 20px;font-size:18px}
 .wrap{padding:20px;max-width:1200px;margin:auto}
+
 h2{margin-top:34px;font-size:20px;border-left:4px solid #1f3c88;padding-left:6px}
-input,select,button{padding:6px;margin:4px}
+
+.row{
+ display:flex;
+ flex-wrap:wrap;
+ gap:8px;
+ margin-bottom:6px
+}
+
+.row input, .row select{
+ flex:1;
+ min-width:130px;
+ padding:6px
+}
+
 table{border-collapse:collapse;width:100%;background:#fff;margin-top:10px}
 th,td{border:1px solid #ccc;padding:6px;font-size:14px}
 th{background:#eee}
-button{cursor:pointer}
+
+button{padding:6px 10px;cursor:pointer}
 .danger{color:red;text-decoration:underline;cursor:pointer}
-.flex{display:flex;gap:12px}
+.edit{color:blue;text-decoration:underline;cursor:pointer}
 </style>
 </head>
 
 <body>
-<header>HTORI ERP – STOCK + EMPLOYEE + PAYROLL + DEFECT Reason</header>
+
+<header>HTORI ERP – STOCK / EMPLOYEE / PAYROLL / DEFECT</header>
 
 <div class="wrap">
 
-<!-- ================================== PURCHASE =================================== -->
-<h2>입고 (Purchase / Stock IN)</h2>
-<div class="flex">
-<input type="date" id="p_date">
-<input id="p_code" placeholder="Code">
-<input id="p_name" placeholder="Name">
-<input type="number" id="p_qty" placeholder="Qty">
-<select id="p_unit">
- <option>PCS</option><option>SET</option><option>KG</option>
-</select>
-<button onclick="savePurchase()">Save</button>
+
+<!-- ================= PURCHASE ================= -->
+<h2>입고 (Purchase)</h2>
+
+<div class="row">
+ <input type="date" id="p_date">
+ <input id="p_code" placeholder="Code">
+ <input id="p_name" placeholder="Name">
+ <input type="number" id="p_qty" placeholder="Qty">
+ <input id="p_unit" value="PCS">
+ <button onclick="savePurchase()">Save</button>
 </div>
 
+<div id="purchaseEditArea"></div>
+
 <table>
-<thead><tr><th>Date</th><th>Code</th><th>Name</th><th>Qty</th><th>Unit</th><th></th></tr></thead>
+<thead>
+<tr><th>Date</th><th>Code</th><th>Name</th><th>Qty</th><th>Unit</th><th></th><th></th></tr>
+</thead>
 <tbody id="purchaseBody"></tbody>
 </table>
 
 
-<!-- ================================== DEFECT =================================== -->
-<h2>불량 (Defect / Stock OUT)</h2>
-<div class="flex">
-<select id="def_process">
-<option>P01</option><option>P02</option><option>P03</option>
-</select>
-<input id="def_code" placeholder="Code">
-<input type="number" id="def_qty" placeholder="Qty">
-<input id="def_reason" placeholder="불량 사유">
-<input id="def_memo" placeholder="메모(optional)">
-<button onclick="saveDefect()">Save</button>
-</div>
+<!-- ================= EMPLOYEE ================= -->
+<h2>직원 관리</h2>
 
-<!-- ================================== EMPLOYEES =================================== -->
-<h2>직원 관리 (CRUD + 추가정보)</h2>
-<div class="flex">
-<input id="emp_id" placeholder="ID">
-<input id="emp_name" placeholder="Name">
+<div class="row">
+ <input id="emp_id" placeholder="ID">
+ <input id="emp_name" placeholder="Name">
 
-<select id="emp_gender">
-<option>Male</option><option>Female</option>
-</select>
+ <select id="emp_gender">
+  <option value="">성별?</option>
+  <option>Male</option>
+  <option>Female</option>
+ </select>
 
-<select id="emp_married">
-<option>No</option><option>Yes</option>
-</select>
+ <select id="emp_married">
+  <option value="">결혼여부?</option>
+  <option value="Yes">기혼</option>
+  <option value="No">미혼</option>
+ </select>
 
-<select id="emp_employment">
-<option>PKWT</option>
-<option>PKWTT</option>
-<option>TRAINER</option>
-</select>
+ <select id="emp_employment">
+  <option value="">고용형태?</option>
+  <option>PKWT</option>
+  <option>PKWTT</option>
+  <option>TRAINER</option>
+ </select>
 
-<input id="emp_salary" type="number" placeholder="Base Salary">
-<input id="emp_phone" placeholder="Phone">
-<input id="emp_addr" placeholder="Address">
-<input id="emp_bank" placeholder="Bank">
-<input id="emp_tax" placeholder="Tax No">
-<input id="emp_join" type="date">
-<button onclick="saveEmployee()">Add</button>
+ <input id="emp_salary" placeholder="기본급">
+ <select id="emp_paytype">
+  <option value="">급여방식?</option>
+  <option value="HOURLY">시간제</option>
+  <option value="UNIT">단가제</option>
+ </select>
+ <input id="emp_phone" placeholder="Phone">
+ <input id="emp_addr" placeholder="Address">
+ <input id="emp_bank" placeholder="Bank">
+ <input id="emp_tax" placeholder="Tax ID">
+ <input id="emp_join" type="date" placeholder="Join Date">
+ <button onclick="saveEmployee()">Add</button>
 </div>
 
 <div id="empEditArea"></div>
 
 <table>
-<thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Phone</th><th>Salary</th><th>Join</th><th>Bank</th><th></th></tr></thead>
+<thead>
+<tr><th>ID</th><th>Name</th><th>Type</th><th>Phone</th><th>Salary</th><th>PayType</th><th>Join</th><th></th><th></th></tr>
+</thead>
 <tbody id="empBody"></tbody>
 </table>
 
 
-<!-- ================================== PAYROLL =================================== -->
-<h2>급여 계산</h2>
-
-<label>급여 월 선택</label>
-<br>
-<input type="month" id="pay_month">
-
-<h3>급여 대상 직원 선택</h3>
-<div id="payEmpList"></div>
-
-<button onclick="calcPayroll()">선택 직원 급여 합계</button>
-
-<div id="payResult" style="margin-top:20px"></div>
-
-
-<!-- ================================== STOCK =================================== -->
+<!-- ================= STOCK ================= -->
 <h2>현재 재고</h2>
 <table>
 <thead><tr><th>Code</th><th>Name</th><th>Qty</th><th>Unit</th></tr></thead>
 <tbody id="stockBody"></tbody>
 </table>
 
+
 </div>
 
 
-<!-- Firebase v8 -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-// ================= FIREBASE =================
+
+// ===== INIT =====
 firebase.initializeApp({
  apiKey:"AIzaSyARxh0wfAo2RMz_-3KsWUUQYfND_F3_3fI",
- authDomain:"htori-erp-38ed1.firebaseapp.com",
  databaseURL:"https://htori-erp-38ed1-default-rtdb.asia-southeast1.firebasedatabase.app",
  projectId:"htori-erp-38ed1"
 });
-const db=firebase.database();
+
+const db=firebase.database()
+
+function format(n){
+ return Number(n).toLocaleString()
+}
 
 
-// ========== 공통: movement push + 재계산 ==========
+// ================== STOCK movement 기반 ==================
 function addMove(obj){
- db.ref("stock_movement").push(obj).then(()=>recalc(obj.code))
+ db.ref("stock_move").push(obj).then(()=>recalc(obj.code))
 }
 
 function recalc(code){
- db.ref("stock_movement").orderByChild("code").equalTo(code).once("value")
+ db.ref("stock_move").orderByChild("code").equalTo(code).once("value")
  .then(s=>{
    let qty=0,name="",unit=""
    s.forEach(c=>{
      const m=c.val()
      name=m.name||name
      unit=m.unit||unit
-     qty+= (m.type==="IN"?m.qty:-m.qty)
+     qty+=(m.type==="IN"?m.qty:-m.qty)
    })
    db.ref("stock/"+code).set({code,name,qty,unit})
    loadStock()
  })
 }
 
-function formatNum(n){
- return Number(n).toLocaleString("id-ID")
-}
 
-
-// ========== PURCHASE ==========
+// ================ PURCHASE CRUD ================
 function savePurchase(){
  const obj={
    date:p_date.value,
    code:p_code.value,
    name:p_name.value,
    qty:+p_qty.value,
-   unit:p_unit.value
+   unit:p_unit.value,
  }
  const ref=db.ref("purchase").push()
  ref.set(obj)
- addMove({...obj,type:"IN",source:"PURCHASE",refId:ref.key})
+ addMove({...obj,type:"IN",refId:ref.key})
  loadPurchase()
 }
 
@@ -180,181 +187,137 @@ function loadPurchase(){
      const v=c.val()
      purchaseBody.innerHTML+=`
      <tr>
-      <td>${v.date}</td>
-      <td>${v.code}</td>
-      <td>${v.name}</td>
-      <td>${formatNum(v.qty)}</td>
-      <td>${v.unit}</td>
-      <td class="danger" onclick="delPurchase('${c.key}','${v.code}')">Del</td>
+       <td>${v.date}</td>
+       <td>${v.code}</td>
+       <td>${v.name}</td>
+       <td>${format(v.qty)}</td>
+       <td>${v.unit}</td>
+       <td class="edit" onclick="editPurchase('${c.key}')">Edit</td>
+       <td class="danger" onclick="delPurchase('${c.key}','${v.code}')">Del</td>
      </tr>`
    })
  })
 }
 
-function delPurchase(k,code){
- db.ref("purchase/"+k).remove()
- db.ref("stock_movement").orderByChild("refId").equalTo(k).once("value")
- .then(s=>{
-   s.forEach(c=>c.ref.remove())
-   recalc(code)
+function editPurchase(key){
+ db.ref("purchase/"+key).once("value").then(s=>{
+   const v=s.val()
+   purchaseEditArea.innerHTML=`
+   <div class="row" style="background:#fff;padding:10px">
+     <input id="e_date" value="${v.date}">
+     <input id="e_code" value="${v.code}">
+     <input id="e_name" value="${v.name}">
+     <input id="e_qty" value="${v.qty}">
+     <input id="e_unit" value="${v.unit}">
+     <button onclick="savePurchaseEdit('${key}')">저장</button>
+   </div>`
+ })
+}
+
+function savePurchaseEdit(key){
+ const obj={
+   date:e_date.value,
+   code:e_code.value,
+   name:e_name.value,
+   qty:+e_qty.value,
+   unit:e_unit.value
+ }
+ db.ref("purchase/"+key).update(obj)
+ .then(()=>{
+   addMove({...obj,type:"IN"})
+   purchaseEditArea.innerHTML=""
    loadPurchase()
  })
 }
 
-
-// ========== DEFECT ==========
-function saveDefect(){
- const obj={
-   code:def_code.value,
-   qty:+def_qty.value,
-   type:"OUT",
-   reason:def_reason.value,
-   memo:def_memo.value,
-   process:def_process.value,
-   source:"DEFECT"
- }
- addMove(obj)
+function delPurchase(key,code){
+ db.ref("purchase/"+key).remove()
+ db.ref("stock_move").orderByChild("refId").equalTo(key).once("value")
+ .then(s=>{s.forEach(c=>c.ref.remove())})
+ .then(()=>recalc(code))
 }
 
 
-// ========== EMPLOYEE CRUD ==========
+// ================ EMPLOYEE CRUD ================
 function saveEmployee(){
  const obj={
-   id:emp_id.value,
-   name:emp_name.value,
-   gender:emp_gender.value,
-   married:emp_married.value,
-   employment:emp_employment.value,
-   salary:+emp_salary.value,
-   phone:emp_phone.value,
-   addr:emp_addr.value,
-   bank:emp_bank.value,
-   tax:emp_tax.value,
-   join:emp_join.value
+  id:emp_id.value,
+  name:emp_name.value,
+  gender:emp_gender.value,
+  married:emp_married.value,
+  employment:emp_employment.value,
+  salary:+emp_salary.value,
+  paytype:emp_paytype.value,
+  phone:emp_phone.value,
+  addr:emp_addr.value,
+  bank:emp_bank.value,
+  tax:emp_tax.value,
+  join:emp_join.value
  }
- db.ref("employees").push(obj).then(()=>loadEmployees())
+ db.ref("employees").push(obj).then(loadEmployees)
 }
 
 function loadEmployees(){
  empBody.innerHTML=""
  db.ref("employees").once("value").then(s=>{
-   const list=s.val()||{}
-   Object.keys(list).forEach(key=>{
-     const e=list[key]
+   s.forEach(c=>{
+     const e=c.val()
      empBody.innerHTML+=`
      <tr>
       <td>${e.id}</td>
       <td>${e.name}</td>
       <td>${e.employment}</td>
       <td>${e.phone}</td>
-      <td>Rp ${formatNum(e.salary)}</td>
+      <td>${format(e.salary)}</td>
+      <td>${e.paytype}</td>
       <td>${e.join}</td>
-      <td>${e.bank}</td>
-      <td>
-        <button onclick="openEdit('${key}')">수정</button>
-        <button class="danger" onclick="delEmp('${key}')">삭제</button>
-      </td>
+      <td class="edit" onclick="editEmp('${c.key}')">Edit</td>
+      <td class="danger" onclick="delEmp('${c.key}')">Del</td>
      </tr>`
    })
-   loadPayrollEmployees()
  })
 }
 
-function delEmp(key){
- if(confirm("삭제?")){
-   db.ref("employees/"+key).remove().then(loadEmployees)
- }
-}
-
-function openEdit(key){
+function editEmp(key){
  db.ref("employees/"+key).once("value").then(s=>{
    const e=s.val()
    empEditArea.innerHTML=`
-   <h3>직원 수정</h3>
-   ID<input id="edit_id" value="${e.id}">
-   이름<input id="edit_name" value="${e.name}">
-   Salary<input id="edit_salary" type="number" value="${e.salary}">
-   Phone<input id="edit_phone" value="${e.phone}">
-   Addr<input id="edit_addr" value="${e.addr}">
-   Bank<input id="edit_bank" value="${e.bank}">
-   Tax<input id="edit_tax" value="${e.tax}">
-   Join<input id="edit_join" type="date" value="${e.join}">
-   <button onclick="saveEdit('${key}')">저장</button>
-   `
+   <div class="row" style="background:#fff;padding:10px">
+    <input id="ed_id" value="${e.id}">
+    <input id="ed_name" value="${e.name}">
+    <input id="ed_salary" value="${e.salary}">
+    <input id="ed_phone" value="${e.phone}">
+    <input id="ed_addr" value="${e.addr}">
+    <input id="ed_bank" value="${e.bank}">
+    <input id="ed_tax" value="${e.tax}">
+    <input id="ed_join" value="${e.join}" type="date">
+    <button onclick="saveEmpEdit('${key}')">저장</button>
+   </div>`
  })
 }
 
-function saveEdit(key){
+function saveEmpEdit(key){
  const obj={
-   id:edit_id.value,
-   name:edit_name.value,
-   salary:+edit_salary.value,
-   phone:edit_phone.value,
-   addr:edit_addr.value,
-   bank:edit_bank.value,
-   tax:edit_tax.value,
-   join:edit_join.value
+   id:ed_id.value,
+   name:ed_name.value,
+   salary:+ed_salary.value,
+   phone:ed_phone.value,
+   addr:ed_addr.value,
+   bank:ed_bank.value,
+   tax:ed_tax.value,
+   join:ed_join.value
  }
- db.ref("employees/"+key).update(obj).then(()=>{
-   empEditArea.innerHTML=""
-   loadEmployees()
- })
+ db.ref("employees/"+key).update(obj)
+ .then(()=>{empEditArea.innerHTML="";loadEmployees()})
+}
+
+function delEmp(key){
+ if(!confirm("삭제?"))return
+ db.ref("employees/"+key).remove().then(loadEmployees)
 }
 
 
-// ========== PAYROLL ==========
-function loadPayrollEmployees(){
- payEmpList.innerHTML=""
- db.ref("employees").once("value").then(s=>{
-   const list=s.val()||{}
-   Object.keys(list).forEach(key=>{
-     const e=list[key]
-     payEmpList.innerHTML+=`
-     <label>
-       <input type="checkbox" class="pay-emp" value="${key}">
-       ${e.name} (${e.employment})
-     </label><br>`
-   })
- })
-}
-
-function calcPayroll(){
- const month=pay_month.value
- if(!month)return alert("월 선택")
- const ids=[...document.querySelectorAll(".pay-emp:checked")].map(x=>x.value)
- if(ids.length===0)return alert("직원 선택")
-
- const start=month+"-01",end=month+"-31"
-
- db.ref("payroll_log").once("value").then(s=>{
-   const logs=s.val()||{}
-   const total={}
-   ids.forEach(id=>total[id]=0)
-
-   Object.values(logs).forEach(r=>{
-     if(ids.includes(r.employeeId)){
-       if(r.date>=start && r.date<=end){
-         total[r.employeeId]+=Number(r.amount||0)
-       }
-     }
-   })
-
-   showPayroll(total)
- })
-}
-
-function showPayroll(result){
- payResult.innerHTML=""
- Object.keys(result).forEach(id=>{
-   db.ref("employees/"+id).once("value").then(s=>{
-     const e=s.val()
-     payResult.innerHTML+=`${e.name}: Rp ${formatNum(result[id])}<br>`
-   })
- })
-}
-
-
-// ========== STOCK LOAD ==========
+// ================= STOCK =================
 function loadStock(){
  stockBody.innerHTML=""
  db.ref("stock").once("value").then(s=>{
@@ -364,18 +327,19 @@ function loadStock(){
      <tr>
       <td>${v.code}</td>
       <td>${v.name}</td>
-      <td>${formatNum(v.qty)}</td>
-      <td>${v.unit||""}</td>
+      <td>${format(v.qty)}</td>
+      <td>${v.unit}</td>
      </tr>`
    })
  })
 }
 
 
-// ========== INIT ==========
+
+
+// INIT LOAD
 loadPurchase()
 loadEmployees()
-loadPayrollEmployees()
 loadStock()
 
 </script>
