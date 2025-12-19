@@ -1,48 +1,264 @@
-<section>
-<h2>생산 입력</h2>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>HTORI ERP CORE – STOCK + BOM + MENU</title>
 
-<select id="prod_process">
-<option value="P01">P01</option>
-<option value="P02">P02</option>
-<option value="P03">P03</option>
-</select>
+<style>
+body{font-family:Arial;margin:0;background:#f5f6f9;}
+header{background:#1f3c88;color:white;padding:12px 18px;font-size:19px}
+.container{display:flex}
+.sidebar{width:200px;background:#111;color:white;min-height:100vh;padding-top:20px}
+.sidebar button{display:block;width:100%;padding:10px;margin:4px 0;background:#222;color:white;border:none;text-align:left}
+.main{flex:1;padding:20px}
 
-<input id="prod_in" placeholder="투입 코드">
-<input id="prod_out" placeholder="산출 코드">
-<input type="number" id="prod_qty" placeholder="수량">
+/* 공통 UI */
+h2{margin-top:25px}
+input,select,button{padding:6px;margin:4px}
+table{border-collapse:collapse;width:100%;background:white;margin-top:12px}
+th,td{border:1px solid #ccc;padding:6px}
+th{background:#eee}
+.danger{color:red;cursor:pointer}
+</style>
+</head>
 
-<button onclick="runProd()">실행</button>
+<body>
+<header>HTORI ERP – STOCK/BOM/PRODUCTION</header>
+
+<div class="container">
+
+<!-- ================= SIDE MENU ================= -->
+<div class="sidebar">
+ <button onclick="showPage('purchase')">입고</button>
+ <button onclick="showPage('production')">생산</button>
+ <button onclick="showPage('defect')">불량</button>
+ <button onclick="showPage('outsource')">외주</button>
+ <button onclick="showPage('stock')">재고</button>
+ <button onclick="showPage('bom')">BOM</button>
+</div>
+
+<!-- ================= MAIN AREA ================= -->
+<div class="main">
+
+<!-- Purchase -->
+<section id="purchase" class="page">
+<h2>입고</h2>
+<input type="date" id="p_date">
+<input id="p_code" placeholder="Code">
+<input id="p_name" placeholder="Name">
+<input id="p_qty" type="number" placeholder="Qty">
+<button onclick="savePurchase()">Save</button>
+
+<table>
+<thead><tr><th>Date</th><th>Code</th><th>Name</th><th>Qty</th></tr></thead>
+<tbody id="purchaseBody"></tbody>
+</table>
 </section>
 
+<!-- Production -->
+<section id="production" class="page" style="display:none">
+<h2>생산</h2>
+<select id="prod_process"><option value="P01">P01</option></select>
+<input id="prod_in" placeholder="Input Code">
+<input id="prod_out" placeholder="Output Code">
+<input id="prod_qty" type="number" placeholder="Qty">
+<button onclick="runProd()">Run</button>
+</section>
 
-<section>
-<h2>불량 등록</h2>
-
-<select id="def_process">
-<option value="P01">P01</option>
-<option value="P02">P02</option>
-<option value="P03">P03</option>
-</select>
-
-<input id="def_code" placeholder="코드">
-<input type="number" id="def_qty" placeholder="수량">
-<input id="def_reason" placeholder="불량 사유 입력">
-
+<!-- Defect -->
+<section id="defect" class="page" style="display:none">
+<h2>불량</h2>
+<input id="def_code" placeholder="Code">
+<input id="def_qty" type="number" placeholder="Qty">
+<input id="def_reason" placeholder="사유">
 <button onclick="runDefect()">등록</button>
 </section>
 
-
-<section>
-<h2>외주 등록</h2>
-
-<select id="os_type">
-<option value="OUT">외주 출고</option>
-<option value="IN">외주 입고</option>
-</select>
-
-<input id="os_vendor" placeholder="업체명">
-<input id="os_code" placeholder="코드">
-<input type="number" id="os_qty" placeholder="수량">
-
+<!-- Outsource -->
+<section id="outsource" class="page" style="display:none">
+<h2>외주</h2>
+<select id="os_type"><option value="OUT">출고</option><option value="IN">입고</option></select>
+<input id="os_vendor" placeholder="Vendor">
+<input id="os_code" placeholder="Code">
+<input id="os_qty" type="number" placeholder="Qty">
 <button onclick="runOutsource()">저장</button>
 </section>
+
+<!-- Stock -->
+<section id="stock" class="page" style="display:none">
+<h2>재고</h2>
+<button onclick="recalcStock()">전체 재계산</button>
+<table>
+<thead><tr><th>Code</th><th>Name</th><th>Qty</th></tr></thead>
+<tbody id="stockBody"></tbody>
+</table>
+</section>
+
+<!-- BOM -->
+<section id="bom" class="page" style="display:none">
+<h2>BOM 등록</h2>
+<input id="bom_parent" placeholder="완제품코드">
+<input id="bom_child" placeholder="소모코드">
+<input id="bom_qty" type="number" placeholder="1EA당 소모량">
+<button onclick="saveBOM()">BOM 입력</button>
+
+<h3>BOM 목록</h3>
+<table>
+<thead><tr><th>Parent</th><th>Child</th><th>Qty</th></tr></thead>
+<tbody id="bomBody"></tbody>
+</table>
+</section>
+
+</div>
+</div>
+
+
+<!-- Firebase v8 -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+// firebase init
+firebase.initializeApp({
+ apiKey:"AIzaSyARxh0wfAo2RMz_-3KsWUUQYfND_F3_3fI",
+ authDomain:"htori-erp-38ed1.firebaseapp.com",
+ databaseURL:"https://htori-erp-38ed1-default-rtdb.asia-southeast1.firebasedatabase.app",
+ projectId:"htori-erp-38ed1"
+});
+const db=firebase.database();
+
+
+// PAGE navigation
+function showPage(id){
+ document.querySelectorAll(".page").forEach(p=>p.style.display="none");
+ document.getElementById(id).style.display="block";
+}
+
+
+/* movement push */
+function addMovement(obj){
+ db.ref("stock_movement").push(obj);
+}
+
+
+/* ================= PURCHASE ================= */
+function savePurchase(){
+ addMovement({date:p_date.value,code:p_code.value,name:p_name.value,qty:+p_qty.value,type:"IN",source:"PURCHASE"});
+ showPurchase();
+}
+function showPurchase(){
+ purchaseBody.innerHTML="";
+ db.ref("stock_movement").orderByChild("source").equalTo("PURCHASE").once("value").then(s=>{
+   s.forEach(c=>{
+     const v=c.val();
+     purchaseBody.innerHTML+=`<tr><td>${v.date}</td><td>${v.code}</td><td>${v.name}</td><td>${v.qty}</td></tr>`;
+   });
+ });
+}
+
+
+/* ================= PRODUCTION (BOM 자동 차감) ================= */
+
+function runProd(){
+ let outQty=+prod_qty.value;
+ let outCode=prod_out.value;
+
+ // 1) output 추가
+ addMovement({date:new Date().toISOString(),code:outCode,qty:outQty,type:"IN",source:"PRODUCTION"});
+
+ // 2) BOM 읽어서 자재 차감
+ db.ref("bom").orderByChild("parent").equalTo(outCode).once("value").then(s=>{
+   s.forEach(c=>{
+     let b=c.val();
+     let need=b.qty*outQty;
+
+     addMovement({
+        date:new Date().toISOString(),
+        code:b.child,
+        qty:need,
+        type:"OUT",
+        source:"BOM"
+     });
+   });
+ });
+ alert("생산 처리 완료");
+}
+
+
+/* ================= DEFECT ================= */
+function runDefect(){
+ addMovement({
+   date:new Date().toISOString(),
+   code:def_code.value,
+   qty:+def_qty.value,
+   type:"OUT",
+   source:"DEFECT",
+   reason:def_reason.value
+ });
+}
+
+/* ================= OUTSOURCE ================= */
+function runOutsource(){
+ addMovement({
+   date:new Date().toISOString(),
+   code:os_code.value,
+   qty:+os_qty.value,
+   type:os_type.value,
+   source:"OUTSOURCE",
+   vendor:os_vendor.value
+ });
+}
+
+/* ================= STOCK ================= */
+function recalcStock(){
+ let map={};
+ db.ref("stock_movement").once("value").then(s=>{
+   s.forEach(c=>{
+     const m=c.val();
+     if(!map[m.code])map[m.code]={code:m.code,qty:0,name:m.name||""};
+     if(m.type==="IN")map[m.code].qty+=m.qty;
+     if(m.type==="OUT")map[m.code].qty-=m.qty;
+   });
+   db.ref("stock").set(map);
+   showStock();
+ });
+}
+
+function showStock(){
+ stockBody.innerHTML="";
+ db.ref("stock").once("value").then(s=>{
+   s.forEach(c=>{
+     let v=c.val();
+     stockBody.innerHTML+=`<tr><td>${v.code}</td><td>${v.name}</td><td>${v.qty}</td></tr>`;
+   });
+ });
+}
+
+/* ================= BOM CRUD ================= */
+function saveBOM(){
+ db.ref("bom").push({
+   parent:bom_parent.value,
+   child:bom_child.value,
+   qty:+bom_qty.value
+ });
+ showBOM();
+}
+function showBOM(){
+ bomBody.innerHTML="";
+ db.ref("bom").once("value").then(s=>{
+   s.forEach(c=>{
+     let b=c.val();
+     bomBody.innerHTML+=`<tr><td>${b.parent}</td><td>${b.child}</td><td>${b.qty}</td></tr>`;
+   });
+ });
+}
+
+// init
+showPurchase();
+showStock();
+showBOM();
+
+</script>
+
+</body>
+</html>
