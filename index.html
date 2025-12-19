@@ -1,309 +1,48 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<title>HTORI ERP – STAFF / PAYROLL</title>
-
-<style>
-body{font-family:Arial;margin:0;background:#f4f6f9;}
-header{background:#1f3c88;color:#fff;padding:12px;font-size:18px;}
-.wrap{padding:20px;max-width:1400px;margin:auto}
-
-/* 테이블 */
-table{border-collapse:collapse;width:100%;background:#fff;margin-top:10px}
-th,td{padding:6px;border:1px solid #ccc}
-th{background:#eee}
-
-/* form */
-input,select,button{padding:6px;margin:4px}
-button{cursor:pointer}
-.row{display:flex;flex-wrap:wrap;gap:10px}
-input{width:180px}
-select{width:120px}
-
-.danger{color:red;cursor:pointer}
-.edit{color:blue;cursor:pointer}
-.disable{opacity:.4;cursor:not-allowed}
-
-/* 영역 구분 */
-section{margin-top:30px;padding:15px;background:#fff;border-radius:6px}
-</style>
-</head>
-
-<body>
-
-<header>HTORI ERP – STAFF + PAYROLL</header>
-
-<div class="wrap">
-
-<!-- ===================================================
-    A. 직원 등록
-======================================================= -->
 <section>
-<h2>직원 등록</h2>
+<h2>생산 입력</h2>
 
-<div class="row">
-<input id="emp_id" placeholder="직원 ID">
-<input id="emp_name" placeholder="이름">
-
-<select id="emp_gender">
-<option value="M">남</option>
-<option value="F">여</option>
+<select id="prod_process">
+<option value="P01">P01</option>
+<option value="P02">P02</option>
+<option value="P03">P03</option>
 </select>
 
-<select id="emp_married">
-<option value="NO">미혼</option>
-<option value="YES">기혼</option>
-</select>
+<input id="prod_in" placeholder="투입 코드">
+<input id="prod_out" placeholder="산출 코드">
+<input type="number" id="prod_qty" placeholder="수량">
 
-<select id="emp_type">
-<option value="PKWT">PKWT (정규직)</option>
-<option value="PKWTT">PKWTT (비정규직)</option>
-<option value="TRAINER">Trainer (인턴)</option>
-</select>
-
-<input id="emp_phone" placeholder="전화">
-<input id="emp_addr" placeholder="주소">
-<input id="emp_bank" placeholder="은행/계좌">
-<input id="emp_tax" placeholder="TAX No">
-
-<input type="date" id="emp_join">
-
-<input type="number" id="emp_basic" placeholder="기본급여">
-
-<select id="emp_paymode">
-<option value="HOUR">시간제</option>
-<option value="UNIT">단가제</option>
-<option value="NONE">기본급만</option>
-</select>
-
-<input type="number" id="emp_rate" placeholder="시간/단가 금액">
-
-<button onclick="saveEmployee()">저장</button>
-</div>
-
+<button onclick="runProd()">실행</button>
 </section>
 
 
-<!-- ===================================================
-    직원 목록 + 수정 + 퇴사 + 삭제
-======================================================= -->
 <section>
-<h2>직원 목록 (수정/퇴사/삭제)</h2>
+<h2>불량 등록</h2>
 
-<table>
-<thead>
-<tr>
-<th>ID</th><th>이름</th><th>Type</th><th>입사일</th>
-<th>기본급여</th><th>상태</th><th>Action</th>
-</tr>
-</thead>
-<tbody id="empBody"></tbody>
-</table>
+<select id="def_process">
+<option value="P01">P01</option>
+<option value="P02">P02</option>
+<option value="P03">P03</option>
+</select>
+
+<input id="def_code" placeholder="코드">
+<input type="number" id="def_qty" placeholder="수량">
+<input id="def_reason" placeholder="불량 사유 입력">
+
+<button onclick="runDefect()">등록</button>
 </section>
 
 
-<!-- ===================================================
-   B. 급여 입력(시간/단가 기록)
-======================================================= -->
 <section>
-<h2>급여 입력</h2>
+<h2>외주 등록</h2>
 
-<div class="row">
-<select id="pay_emp"></select>
-<input type="date" id="pay_date">
+<select id="os_type">
+<option value="OUT">외주 출고</option>
+<option value="IN">외주 입고</option>
+</select>
 
-<input id="pay_qty" type="number" placeholder="시간/수량">
-<button onclick="addPayroll()">추가</button>
-</div>
+<input id="os_vendor" placeholder="업체명">
+<input id="os_code" placeholder="코드">
+<input type="number" id="os_qty" placeholder="수량">
 
+<button onclick="runOutsource()">저장</button>
 </section>
-
-
-
-<!-- ===================================================
-   급여 계산 + 기간 선택 조회
-======================================================= -->
-<section>
-<h2>급여 계산</h2>
-
-<div class="row">
-<input type="date" id="pay_s">
-<input type="date" id="pay_e">
-<button onclick="calcPayroll()">계산</button>
-</div>
-
-<table>
-<thead>
-<tr>
-<th>직원</th><th>PKWT</th><th>PKWTT</th><th>Trainer</th><th>Total(Rp)</th>
-</tr>
-</thead>
-<tbody id="sumBody"></tbody>
-</table>
-</section>
-
-</div>
-
-
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
-<script>
-firebase.initializeApp({
- apiKey:"AIzaSyARxh0wfAo2RMz_-3KsWUUQYfND_F3_3fI",
- authDomain:"htori-erp-38ed1.firebaseapp.com",
- databaseURL:"https://htori-erp-38ed1-default-rtdb.asia-southeast1.firebasedatabase.app",
- projectId:"htori-erp-38ed1"
-});
-const db=firebase.database();
-
-function fmt(n){
- return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,",");
-}
-
-/* ================= 직원 저장 ================= */
-function saveEmployee(){
- const emp={
-   id:emp_id.value.trim(),
-   name:emp_name.value.trim(),
-   gender:emp_gender.value,
-   married:emp_married.value,
-   type:emp_type.value,
-   phone:emp_phone.value.trim(),
-   addr:emp_addr.value.trim(),
-   bank:emp_bank.value.trim(),
-   tax:emp_tax.value.trim(),
-   join:emp_join.value,
-   basic:+emp_basic.value,
-   mode:emp_paymode.value,
-   rate:+emp_rate.value,
-   active:true
- }
- db.ref("employee/"+emp.id).set(emp).then(()=>showEmp());
-}
-
-/* ================= 직원 목록 ================= */
-function showEmp(){
- empBody.innerHTML="";
- pay_emp.innerHTML="";
-
- db.ref("employee").once("value").then(s=>{
-  s.forEach(c=>{
-    const e=c.val();
-    if(e.active) pay_emp.innerHTML+=`<option>${e.id}</option>`;
-
-    empBody.innerHTML+=`
-    <tr>
-      <td>${e.id}</td><td>${e.name}</td>
-      <td>${e.type}</td><td>${e.join}</td>
-      <td>${fmt(e.basic)}</td>
-      <td>${e.active?"재직":"퇴사"}</td>
-      <td>
-        <span class="edit" onclick="editEmp('${e.id}')">수정</span> |
-        <span class="danger" onclick="leaveEmp('${e.id}')">퇴사</span> |
-        <span class="danger" onclick="delEmp('${e.id}')">삭제</span>
-      </td>
-    </tr>
-    `;
-  });
- });
-}
-
-/* ================= 수정 ================= */
-function editEmp(id){
- db.ref("employee/"+id).once("value").then(s=>{
-   const e=s.val();
-   emp_id.value=e.id;
-   emp_name.value=e.name;
-   emp_gender.value=e.gender;
-   emp_married.value=e.married;
-   emp_type.value=e.type;
-   emp_phone.value=e.phone;
-   emp_addr.value=e.addr;
-   emp_bank.value=e.bank;
-   emp_tax.value=e.tax;
-   emp_join.value=e.join;
-   emp_basic.value=e.basic;
-   emp_paymode.value=e.mode;
-   emp_rate.value=e.rate;
- });
-}
-
-/* ================= 퇴사 ================= */
-function leaveEmp(id){
- db.ref("employee/"+id+"/active").set(false).then(()=>showEmp());
-}
-
-/* ================= 삭제 ================= */
-function delEmp(id){
- db.ref("employee/"+id).remove().then(()=>showEmp());
-}
-
-/* ================= 급여 입력 ================= */
-function addPayroll(){
- const id=pay_emp.value;
- const qty=+pay_qty.value;
- const date=pay_date.value;
-
- db.ref("employee/"+id).once("value").then(s=>{
-   const e=s.val();
-   if(!e.active){
-     alert("퇴사자는 입력 불가");
-     return;
-   }
-   db.ref("payroll").push({id,date,qty});
-   pay_qty.value="";
- });
-}
-
-/* ================= 급여 계산 ================= */
-function calcPayroll(){
- const S=pay_s.value,E=pay_e.value;
- let sum={};
-
- db.ref("employee").once("value").then(emp=>{
-   emp.forEach(c=>{
-     const e=c.val();
-     sum[e.id]={name:e.name,type:e.type,total:0,basic:e.basic,mode:e.mode,rate:e.rate};
-   });
-
-   db.ref("payroll").once("value").then(pay=>{
-    pay.forEach(c=>{
-      const p=c.val();
-      if(p.date>=S && p.date<=E){
-        sum[p.id].total += p.qty * sum[p.id].rate;
-      }
-    });
-
-    sumBody.innerHTML="";
-    Object.keys(sum).forEach(id=>{
-      const e=sum[id];
-      const total = e.total + e.basic;
-      let pk="",pt="",tr="";
-      if(e.type==="PKWT") pk=fmt(total);
-      if(e.type==="PKWTT") pt=fmt(total);
-      if(e.type==="TRAINER") tr=fmt(total);
-
-      sumBody.innerHTML+=`
-      <tr>
-        <td>${e.name}</td>
-        <td>${pk}</td>
-        <td>${pt}</td>
-        <td>${tr}</td>
-        <td>${fmt(total)}</td>
-      </tr>
-      `;
-    });
-
-   });
- });
-}
-
-showEmp();
-</script>
-
-</body>
-</html>
