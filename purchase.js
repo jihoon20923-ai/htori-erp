@@ -130,5 +130,4 @@ async function loadPOs(){
   });
 }
 
-document.addEventListener("DOMContentLoaded", loadItems);
-document.getElementById("filterSupplier").addEventListener("keyup", loadPOs);
+setTimeout(loadPOs, 0);
