@@ -10,11 +10,15 @@ const routes = {
   outsource:  `${base}/pages/outsource.html`,
   employee:   `${base}/pages/employee.html`
 };
-export function loadPage(){
-  const hash = window.location.hash.substring(2) || "dashboard";
-  fetch(routes[hash])
-    .then(res => res.text())
-    .then(html => {
-      document.getElementById("app").innerHTML = html;
-    });
+async function loadItems(){
+  try {
+    console.log("loadItems called");
+    const qSnapshot = await getDocs(collection(db,"items"));
+    console.log("qSnapshot size =", qSnapshot.size);
+
+    const tbody = document.getElementById("itemsTableBody");
+    tbody.innerHTML = "";
+      } catch(err){
+    console.error("loadItems error:", err);
+  }
 }
