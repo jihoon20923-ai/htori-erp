@@ -3,12 +3,12 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.13.0/firebas
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey:"YOUR_KEY",
-  authDomain:"YOUR_PROJECT.firebaseapp.com",
-  projectId:"YOUR_PROJECT_ID",
-  storageBucket:"YOUR_PROJECT.appspot.com",
-  messagingSenderId:"XXXX",
-  appId:"XXXX"
+  apiKey: "AIzaSyDa….",
+  authDomain: "htori-erp.firebaseapp.com",
+  projectId: "htori-erp",
+  storageBucket: "htori-erp.appspot.com",
+  messagingSenderId: "2917829146",
+  appId: "1:2917829146:web:28129de92f"
 };
 
 export const app = initializeApp(firebaseConfig);
