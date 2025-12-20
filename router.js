@@ -22,8 +22,16 @@ export async function loadPage(){
 }
 
 function loadPageScript(hash){
-  const script = document.createElement("script");
-  script.type="module";
-  script.src = `/htori-erp/${hash}.js`;
-  document.body.appendChild(script);
+  const scriptPath = `/htori-erp/${hash}.js`;
+
+  fetch(scriptPath)
+    .then(res=>{
+      if(res.ok){
+        const script = document.createElement("script");
+        script.type="module";
+        script.src = scriptPath;
+        document.body.appendChild(script);
+      }
+    })
+    .catch(()=>{});
 }
