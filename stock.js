@@ -37,6 +37,7 @@ itemForm.addEventListener("submit", async (e) => {
 
 
 async function loadItems(){
+  console.log("loadItems called");
   const qSnapshot = await getDocs(collection(db,"items"));
 
   const tbody = document.getElementById("itemsTableBody");
