@@ -1,4 +1,11 @@
 import { loadPage } from "./router.js";
 
-window.addEventListener("load", () => loadPage());
-window.addEventListener("hashchange", () => loadPage());
+function initRouter(){
+  if(!window.location.hash){
+    window.location.hash = "#/dashboard";
+  }
+  loadPage();
+}
+
+window.addEventListener("load", initRouter);
+window.addEventListener("hashchange", loadPage);
