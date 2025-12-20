@@ -1,3 +1,4 @@
+console.log("stock.js loaded");
 import { db } from "./firebase/firebase-config.js";
 import {
   collection,
