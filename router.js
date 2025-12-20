@@ -11,14 +11,19 @@ const routes = {
   employee:   `${base}/pages/employee.html`
 };
 
-export function loadPage(){
+export async function loadPage(){
   const hash = window.location.hash.substring(2) || "dashboard";
-  fetch(routes[hash])
-    .then(res => res.text())
-    .then(html => {
-      document.getElementById("app").innerHTML = html;
-    })
-    .catch(err => {
-      console.error("loadPage error:", err);
-    });
+
+  const html = await fetch(routes[hash]).then(res=>res.text());
+  document.getElementById("app").innerHTML = html;
+
+  // 페이지 js 자동 로딩
+  loadPageScript(hash);
+}
+
+function loadPageScript(hash){
+  const script = document.createElement("script");
+  script.type="module";
+  script.src = `/htori-erp/${hash}.js`;
+  document.body.appendChild(script);
 }
