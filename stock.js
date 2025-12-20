@@ -88,4 +88,4 @@ window.delItem = async (id)=>{
   }
 };
 
-document.addEventListener("DOMContentLoaded", loadItems);
+setTimeout(loadPOs, 0);
