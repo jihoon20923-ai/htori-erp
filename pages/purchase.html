@@ -4,28 +4,46 @@
 
   <input id="poNumber" placeholder="PO Number">
   <input id="supplier" placeholder="Supplier">
-  <input id="itemCode" placeholder="Item Code">
-  <input id="itemQty" type="number" placeholder="Qty">
-  <input id="unitPrice" type="number" step="0.001" placeholder="Unit Price">
 
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Qty</th>
+        <th>Unit Price</th>
+      </tr>
+    </thead>
+    <tbody id="poItemsBody">
+      <tr>
+        <td><input class="poCode"></td>
+        <td><input class="poQty" type="number"></td>
+        <td><input class="poPrice" type="number"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <button id="addRowBtn">Add Item</button>
   <button type="submit">Save PO</button>
+
 </form>
 
 <hr>
 
 <h3>PO List</h3>
 
+<input id="filterSupplier" placeholder="Supplier Search">
+
 <table border="1" width="100%">
-  <thead>
-    <tr>
-      <th>PO Number</th>
-      <th>Supplier</th>
-      <th>Items</th>
-      <th>Status</th>
-      <th>Created</th>
-    </tr>
-  </thead>
-
-  <tbody id="poTableBody"></tbody>
+<thead>
+<tr>
+  <th>PO Number</th>
+  <th>Supplier</th>
+  <th>Items</th>
+  <th>Status</th>
+  <th>Created</th>
+  <th>Approve</th>
+  <th>Receive</th>
+</tr>
+</thead>
+<tbody id="poTableBody"></tbody>
 </table>
-
