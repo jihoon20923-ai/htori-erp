@@ -1,4 +1,7 @@
+// stock.js (root 폴더)
+
 console.log("stock.js loaded");
+
 import { db } from "./firebase/firebase-config.js";
 import {
   collection,
@@ -10,6 +13,7 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
+// Save item
 const itemForm = document.getElementById("itemForm");
 
 itemForm.addEventListener("submit", async (e) => {
@@ -21,48 +25,67 @@ itemForm.addEventListener("submit", async (e) => {
   const uom = document.getElementById("itemUom").value;
   const location = document.getElementById("itemLoc").value;
 
-  await addDoc(collection(db, "items"), {
-    code,
-    name,
-    qty,
-    uom,
-    location,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  });
+  try {
+    await addDoc(collection(db, "items"), {
+      code,
+      name,
+      qty,
+      uom,
+      location,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    console.log("addDoc success");
+  } catch (err) {
+    console.error("addDoc error:", err);
+  }
 
   loadItems();
   itemForm.reset();
 });
 
-
+// Load items list
 async function loadItems(){
-  console.log("loadItems called");
-  const qSnapshot = await getDocs(collection(db,"items"));
+  console.log("loadItems started");
 
-  const tbody = document.getElementById("itemsTableBody");
-  tbody.innerHTML = "";
+  try{
+    const qSnapshot = await getDocs(collection(db, "items"));
+    console.log("getDocs finished");
+    console.log("docs returned =", qSnapshot.size);
 
-  qSnapshot.forEach(docSnap => {
-    const item = docSnap.data();
+    const tbody = document.getElementById("itemsTableBody");
+    tbody.innerHTML = "";
 
-    tbody.innerHTML += `
-      <tr>
-        <td>${item.code}</td>
-        <td>${item.name}</td>
-        <td>${item.qty}</td>
-        <td>${item.uom}</td>
-        <td>${item.location}</td>
-        <td><button onclick="editItem('${docSnap.id}')">Edit</button></td>
-        <td><button onclick="delItem('${docSnap.id}')">Delete</button></td>
-      </tr>
-    `;
-  });
+    qSnapshot.forEach(docSnap => {
+      const item = docSnap.data();
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${item.code}</td>
+          <td>${item.name}</td>
+          <td>${item.qty}</td>
+          <td>${item.uom}</td>
+          <td>${item.location}</td>
+          <td><button onclick="editItem('${docSnap.id}')">Edit</button></td>
+          <td><button onclick="delItem('${docSnap.id}')">Delete</button></td>
+        </tr>
+      `;
+    });
+
+  } catch(err) {
+    console.error("loadItems error:", err);
+  }
 }
 
+// Delete doc
 window.delItem = async (id)=>{
-  await deleteDoc(doc(db,"items",id));
-  loadItems();
+  try{
+    await deleteDoc(doc(db, "items", id));
+    console.log("delete success:", id);
+    loadItems();
+  } catch(err){
+    console.error("delete error:", err);
+  }
 };
 
 window.onload = loadItems;
