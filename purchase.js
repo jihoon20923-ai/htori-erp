@@ -129,5 +129,5 @@ async function loadPOs(){
   });
 }
 
-window.onload = loadPOs;
+document.addEventListener("DOMContentLoaded", loadItems);
 document.getElementById("filterSupplier").addEventListener("keyup", loadPOs);
