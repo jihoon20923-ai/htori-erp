@@ -88,4 +88,4 @@ window.delItem = async (id)=>{
   }
 };
 
-setTimeout(loadPOs, 0);
+setTimeout(loadItems, 0);
