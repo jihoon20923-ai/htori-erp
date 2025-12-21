@@ -1,3 +1,8 @@
+window.showPage = function(page){
+  if(page==="purchase") loadPurchasePage();
+  if(page==="stock") loadStockPage();
+}
+
 console.log("app.js loaded");
 
 import { db } from "./firebase.js";
