@@ -73,4 +73,4 @@ async function loadStockList(){
     `;
   });
 }
-
+showPage("purchase");
