@@ -1,25 +1,20 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-<meta charset="utf-8">
-<title>HTORI ERP Realtime - v1</title>
-<script type="module" src="./app.js"></script>
+  <meta charset="UTF-8">
+  <title>HTORI ERP</title>
 </head>
-
 <body>
-  <nav id="sidebar">
-    <a href="#/dashboard">Dashboard</a>
-    <a href="#/purchase">Purchase</a>
-    <a href="#/stock">Stock</a>
-    <a href="#/production">Production</a>
-    <a href="#/bom">BOM</a>
-    <a href="#/defect">Defect</a>
-    <a href="#/outsource">Outsource</a>
-    <a href="#/employee">Employee/Payroll</a>
-    <a href="#/movement">Movement</a>
+
+  <nav>
+    <button onclick="showPage('purchase')">Purchase</button>
+    <button onclick="showPage('stock')">Stock</button>
   </nav>
 
-  <main id="app">Loading...</main>
+  <section id="app"></section>
+
+  <script type="module" src="./firebase.js"></script>
+  <script type="module" src="./app.js"></script>
 
 </body>
 </html>
