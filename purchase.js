@@ -79,10 +79,13 @@ window.receivePO = async (id)=>{
     await addStock(item.code, item.qty);
   }
 
-  await updateDoc(docRef,{
-    status:"received",
-    updatedAt: serverTimestamp()
-  });
+await addDoc(collection(db,"stock_movements"),{
+  itemCode: item.code,
+  changeQty: item.qty,
+  type:"receive",
+  ref: id,
+  timestamp: serverTimestamp()
+});
 
   loadPOs();
 };
