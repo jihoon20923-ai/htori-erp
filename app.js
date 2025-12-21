@@ -31,3 +31,19 @@ function loadStockPage(){
     </table>
   `;
 }
+import { collection, addDoc, getDocs } 
+from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+window.savePurchase = async function(){
+
+  const code = document.getElementById("p_code").value;
+  const qty  = Number(document.getElementById("p_qty").value);
+
+  await addDoc(collection(db,"purchase"),{
+    code,
+    qty,
+    createdAt: Date.now()
+  });
+
+  loadPurchaseList();
+}
