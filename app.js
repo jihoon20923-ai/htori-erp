@@ -60,4 +60,17 @@ async function loadPurchaseList(){
     `;
   });
 }
+async function loadStockList(){
+  const tbody=document.getElementById("stockBody");
+
+  const snap = await getDocs(collection(db,"stock"));
+  tbody.innerHTML="";
+
+  snap.forEach(doc=>{
+    const d=doc.data();
+    tbody.innerHTML+=`
+      <tr><td>${d.code}</td><td>${d.qty}</td></tr>
+    `;
+  });
+}
 
