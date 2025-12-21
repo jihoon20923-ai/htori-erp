@@ -4,16 +4,17 @@ const base = "/htori-erp";   // 반드시 repository 이름과 동일해야 함
 
 // HTML fragment 경로 매핑
 const routes = {
-  dashboard:  `${base}/pages/dashboard.html`,
-  purchase:   `${base}/pages/purchase.html`,
-  stock:      `${base}/pages/stock.html`,
+  dashboard: `${base}/pages/dashboard.html`,
+  purchase: `${base}/pages/purchase.html`,
+  stock: `${base}/pages/stock.html`,
   production: `${base}/pages/production.html`,
-  bom:        `${base}/pages/bom.html`,
-  defect:     `${base}/pages/defect.html`,
-  outsource:  `${base}/pages/outsource.html`,
-  employee:   `${base}/pages/employee.html`
-  movement: `${base}/pages/movement.html`,
+  bom: `${base}/pages/bom.html`,
+  defect: `${base}/pages/defect.html`,
+  outsource: `${base}/pages/outsource.html`,
+  employee: `${base}/pages/employee.html`,
+  movement: `${base}/pages/movement.html`
 };
+
 
 export async function loadPage(){
 
