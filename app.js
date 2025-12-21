@@ -47,3 +47,17 @@ window.savePurchase = async function(){
 
   loadPurchaseList();
 }
+async function loadPurchaseList(){
+  const tbody=document.getElementById("purchaseBody");
+
+  const snap = await getDocs(collection(db,"purchase"));
+  tbody.innerHTML="";
+
+  snap.forEach(doc=>{
+    const d=doc.data();
+    tbody.innerHTML+=`
+      <tr><td>${d.code}</td><td>${d.qty}</td></tr>
+    `;
+  });
+}
+
