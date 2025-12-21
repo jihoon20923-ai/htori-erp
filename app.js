@@ -2,75 +2,90 @@ console.log("app.js loaded");
 
 import { db } from "./firebase.js";
 
-function showPage(page){
+import { 
+  collection, addDoc, getDocs 
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+window.showPage = function(page){
   if(page==="purchase") loadPurchasePage();
   if(page==="stock") loadStockPage();
-}
+};
 
+/* PAGE LOADERS */
 function loadPurchasePage(){
-  document.getElementById("app").innerHTML = `
+  document.getElementById("app").innerHTML=`
     <h2>Purchase</h2>
     <input id="p_code" placeholder="item code">
-    <input id="p_qty" placeholder="qty">
-    <button onclick="savePurchase()">Save</button>
+    <input id="p_qty" placeholder="qty" type="number">
+    <button id="saveBtn">Save</button>
 
     <h3>Purchase List</h3>
-    <table border="1" width="100%">
+    <table>
       <thead><tr><th>Code</th><th>Qty</th></tr></thead>
       <tbody id="purchaseBody"></tbody>
     </table>
   `;
+
+  document.getElementById("saveBtn").onclick = savePurchase;
+  loadPurchaseList();
 }
 
 function loadStockPage(){
-  document.getElementById("app").innerHTML = `
+  document.getElementById("app").innerHTML=`
     <h2>Stock</h2>
-    <table border="1" width="100%">
+    <table>
       <thead><tr><th>Code</th><th>Qty</th></tr></thead>
       <tbody id="stockBody"></tbody>
     </table>
   `;
+
+  loadStockList();
 }
-import { collection, addDoc, getDocs } 
-from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
-window.savePurchase = async function(){
+/* SAVE PURCHASE */
+async function savePurchase(){
 
-  const code = document.getElementById("p_code").value;
-  const qty  = Number(document.getElementById("p_qty").value);
+  const code=document.getElementById("p_code").value;
+  const qty =Number(document.getElementById("p_qty").value);
 
   await addDoc(collection(db,"purchase"),{
     code,
     qty,
-    createdAt: Date.now()
+    createdAt:Date.now()
   });
 
   loadPurchaseList();
 }
+
+/* FETCH PURCHASE */
 async function loadPurchaseList(){
   const tbody=document.getElementById("purchaseBody");
+  tbody.innerHTML="";
 
   const snap = await getDocs(collection(db,"purchase"));
-  tbody.innerHTML="";
 
   snap.forEach(doc=>{
     const d=doc.data();
-    tbody.innerHTML+=`
+    tbody.insertAdjacentHTML("beforeend",`
       <tr><td>${d.code}</td><td>${d.qty}</td></tr>
-    `;
+    `);
   });
 }
+
+/* FETCH STOCK */
 async function loadStockList(){
   const tbody=document.getElementById("stockBody");
+  tbody.innerHTML="";
 
   const snap = await getDocs(collection(db,"stock"));
-  tbody.innerHTML="";
 
   snap.forEach(doc=>{
     const d=doc.data();
-    tbody.innerHTML+=`
+    tbody.insertAdjacentHTML("beforeend",`
       <tr><td>${d.code}</td><td>${d.qty}</td></tr>
-    `;
+    `);
   });
 }
+
+/* INITIAL PAGE */
 showPage("purchase");
