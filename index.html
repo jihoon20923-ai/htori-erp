@@ -1,20 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
   <meta charset="UTF-8">
   <title>HTORI ERP</title>
+  <style>
+    body{font-family:Arial;background:#f4f6f9;margin:0;display:flex}
+    nav{width:200px;background:#12326b;color:#fff;height:100vh;padding-top:20px}
+    nav button{display:block;width:100%;padding:14px;border:none;background:none;color:#fff;text-align:left;font-size:15px;cursor:pointer}
+    nav button:hover{background:#1f4a85}
+    section{flex:1;padding:30px}
+    table{border-collapse:collapse;width:100%;background:#fff;margin-top:10px}
+    th,td{border:1px solid #ccc;padding:6px;font-size:14px}
+  </style>
 </head>
+
 <body>
 
-  <nav>
-    <button onclick="showPage('purchase')">Purchase</button>
-    <button onclick="showPage('stock')">Stock</button>
-  </nav>
+<nav>
+  <button onclick="showPage('purchase')">Purchase</button>
+  <button onclick="showPage('stock')">Stock</button>
+</nav>
 
-  <section id="app"></section>
+<section id="app"></section>
 
-  <script type="module" src="./firebase.js"></script>
-  <script type="module" src="./app.js"></script>
+<!-- load order VERY IMPORTANT -->
+<script type="module" src="./firebase.js"></script>
+<script type="module" src="./app.js"></script>
 
 </body>
 </html>
