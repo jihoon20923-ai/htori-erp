@@ -79,6 +79,37 @@ window.receivePO = async (id)=>{
 
   loadPOs();
 };
+import { collection, addDoc } from 
+ "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+...
+
+window.receivePO = async (id)=>{
+  const docRef = doc(db,"purchase_orders",id);
+  const snap = await getDoc(docRef);
+  const po = snap.data();
+
+  for(const item of po.items){
+    await addStock(item.code, item.qty);
+
+    // movement 기록
+    await addDoc(collection(db,"stock_movements"),{
+      itemCode: item.code,
+      changeQty: item.qty,
+      type:"receive",
+      ref: id,
+      timestamp: serverTimestamp()
+    });
+  }
+
+  await updateDoc(docRef,{
+    status:"received",
+    updatedAt: serverTimestamp()
+  });
+
+  loadPOs();
+};
+
 
 /* Stock + increase */
 async function addStock(code, qty) {
