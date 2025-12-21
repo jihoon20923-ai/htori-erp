@@ -12,6 +12,7 @@ const routes = {
   defect:     `${base}/pages/defect.html`,
   outsource:  `${base}/pages/outsource.html`,
   employee:   `${base}/pages/employee.html`
+  movement: `${base}/pages/movement.html`,
 };
 
 export async function loadPage(){
