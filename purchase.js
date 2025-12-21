@@ -1,10 +1,17 @@
 console.log("purchase.js loaded");
 
 import { db } from "./firebase/firebase-config.js";
-import { 
-  collection, addDoc, getDocs, updateDoc, doc, serverTimestamp 
+
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  updateDoc,
+  doc,
+  getDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-import { getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 /* Add PO row */
 document.getElementById("addRowBtn").addEventListener("click", e=>{
