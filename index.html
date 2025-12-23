@@ -34,6 +34,7 @@ const firebaseConfig = {
   const result = document.getElementById("result");
 
   document.getElementById("testBtn").onclick = async () => {
+     alert("SAVE CLICKED");
     try {
       // 1️⃣ Firestore에 데이터 저장
       await addDoc(collection(db, "test"), {
