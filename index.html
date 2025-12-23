@@ -1,31 +1,239 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>HTORI ERP</title>
-  <style>
-    body{font-family:Arial;background:#f4f6f9;margin:0;display:flex}
-    nav{width:200px;background:#12326b;color:#fff;height:100vh;padding-top:20px}
-    nav button{display:block;width:100%;padding:14px;border:none;background:none;color:#fff;text-align:left;font-size:15px;cursor:pointer}
-    nav button:hover{background:#1f4a85}
-    section{flex:1;padding:30px}
-    table{border-collapse:collapse;width:100%;background:#fff;margin-top:10px}
-    th,td{border:1px solid #ccc;padding:6px;font-size:14px}
-  </style>
+<meta charset="UTF-8" />
+<title>HTORI ERP – Core</title>
+<style>
+body{font-family:Arial;margin:0;background:#f4f6f9}
+nav{width:220px;background:#12326b;color:#fff;height:100vh;position:fixed}
+nav h2{padding:15px;font-size:16px;margin:0;border-bottom:1px solid #2d4d8a}
+nav button{width:100%;padding:12px;border:0;background:none;color:#fff;text-align:left;cursor:pointer}
+nav button:hover{background:#1f4a85}
+main{margin-left:220px;padding:20px}
+table{border-collapse:collapse;width:100%;background:#fff}
+th,td{border:1px solid #ccc;padding:6px;font-size:13px}
+th{background:#eee}
+input,select,textarea{padding:6px;margin:4px 0;width:100%}
+textarea{resize:vertical}
+.section{background:#fff;padding:15px;margin-bottom:20px}
+.low{color:red;font-weight:bold}
+.filter{display:flex;gap:10px;margin-bottom:10px}
+</style>
 </head>
-
 <body>
 
 <nav>
-  <button onclick="showPage('purchase')">Purchase</button>
-  <button onclick="showPage('stock')">Stock</button>
+  <h2>HTORI ERP</h2>
+  <button onclick="show('stock')">1. Stock</button>
+  <button onclick="show('product')">2. Product</button>
+  <button onclick="show('production')">3. Production</button>
+  <button onclick="show('bom')">4. BOM</button>
+  <button onclick="show('outsourcing')">5. Outsourcing</button>
+  <button onclick="show('stockin')">Stock In</button>
+  <button onclick="show('log')">LOG</button>
 </nav>
 
-<section id="app"></section>
+<main>
 
-<!-- load order VERY IMPORTANT -->
-<script type="module" src="./firebase.js"></script>
-<script type="module" src="./app.js"></script>
+<!-- STOCK -->
+<div id="stock" class="section">
+<h3>Stock</h3>
+<table>
+<thead>
+<tr><th>Code</th><th>Name</th><th>Type</th><th>Qty</th><th>Min</th><th>Status</th></tr>
+</thead>
+<tbody id="stockBody"></tbody>
+</table>
+</div>
 
+<!-- PRODUCT -->
+<div id="product" class="section" style="display:none">
+<h3>Product</h3>
+<input id="pCode" placeholder="Code">
+<input id="pName" placeholder="Name">
+<select id="pType">
+<option>RM</option><option>CM</option><option>SM</option>
+<option>SG</option><option>FG</option>
+</select>
+<input id="pMin" type="number" placeholder="Min Qty">
+<button onclick="addProduct()">Save</button>
+<table><tbody id="productBody"></tbody></table>
+</div>
+
+<!-- PRODUCTION -->
+<div id="production" class="section" style="display:none">
+<h3>Production</h3>
+<select id="prItem"></select>
+<select id="prProcess"></select>
+<input id="prOperator" placeholder="Operator Name">
+<input id="prInput" type="number" placeholder="Input Qty">
+<input id="prGood" type="number" placeholder="Good Qty">
+<textarea id="prMemo" placeholder="Memo"></textarea>
+<button onclick="saveProduction()">Save</button>
+<table><tbody id="prodBody"></tbody></table>
+</div>
+
+<!-- BOM -->
+<div id="bom" class="section" style="display:none">
+<h3>BOM</h3>
+<input id="bItem" placeholder="Finished Item">
+<input id="bProcess" placeholder="Process Code">
+<input id="bOutput" placeholder="Output Product">
+<input id="bMat" placeholder="Material Code">
+<input id="bUsage" type="number" placeholder="Usage Qty">
+<button onclick="addBOM()">Add</button>
+<table><tbody id="bomBody"></tbody></table>
+</div>
+
+<!-- OUTSOURCING -->
+<div id="outsourcing" class="section" style="display:none">
+<h3>Outsourcing</h3>
+<input id="oItem" placeholder="Item Code">
+<select id="oType"><option>OUT</option><option>IN</option></select>
+<input id="oQty" type="number" placeholder="Qty">
+<input id="oDefect" type="number" placeholder="Defect Qty">
+<input id="oVendor" placeholder="Vendor">
+<input id="oPerson" placeholder="Person">
+<textarea id="oMemo" placeholder="Memo"></textarea>
+<button onclick="saveOut()">Save</button>
+<table><tbody id="outBody"></tbody></table>
+</div>
+
+<!-- STOCK IN -->
+<div id="stockin" class="section" style="display:none">
+<h3>Stock In</h3>
+<input id="sItem" placeholder="Item Code">
+<input id="sQty" type="number" placeholder="Qty">
+<input id="sPrice" type="number" placeholder="Unit Price">
+<select id="sCur"><option>USD</option><option>IDR</option><option>RMB</option></select>
+<input id="sPerson" placeholder="Received By">
+<textarea id="sMemo" placeholder="Memo"></textarea>
+<button onclick="saveStockIn()">Save</button>
+<table><tbody id="sinBody"></tbody></table>
+</div>
+
+<!-- LOG -->
+<div id="log" class="section" style="display:none">
+<h3>LOG</h3>
+<div class="filter">
+<select id="fModule">
+<option>ALL</option><option>Production</option><option>Outsourcing</option><option>StockIn</option>
+</select>
+<input id="fText" placeholder="Search">
+<button onclick="renderLog()">Filter</button>
+</div>
+<table><tbody id="logBody"></tbody></table>
+</div>
+
+</main>
+
+<script>
+const LS = k => JSON.parse(localStorage.getItem(k)||"[]");
+const SS = (k,v)=>localStorage.setItem(k,JSON.stringify(v));
+
+const products=()=>LS("products");
+const bom=()=>LS("bom");
+const prod=()=>LS("production");
+const out=()=>LS("outsourcing");
+const sin=()=>LS("stockin");
+
+function show(id){
+document.querySelectorAll(".section").forEach(s=>s.style.display="none");
+document.getElementById(id).style.display="block";
+renderAll();
+}
+
+function addProduct(){
+let p=products();
+p.push({code:pCode.value,name:pName.value,type:pType.value,min:+pMin.value});
+SS("products",p);renderAll();
+}
+
+function addBOM(){
+let b=bom();
+b.push({item:bItem.value,process:bProcess.value,output:bOutput.value,mat:bMat.value,usage:+bUsage.value});
+SS("bom",b);renderAll();
+}
+
+function saveProduction(){
+let d=prod();
+let defect=prInput.value-prGood.value;
+d.push({item:prItem.value,process:prProcess.value,operator:prOperator.value,
+input:+prInput.value,good:+prGood.value,defect,memo:prMemo.value,date:new Date().toLocaleDateString()});
+SS("production",d);renderAll();
+}
+
+function saveOut(){
+let d=out();
+d.push({item:oItem.value,type:oType.value,qty:+oQty.value,defect:+oDefect.value||0,
+vendor:oVendor.value,person:oPerson.value,memo:oMemo.value,date:new Date().toLocaleDateString()});
+SS("outsourcing",d);renderAll();
+}
+
+function saveStockIn(){
+let d=sin();
+d.push({item:sItem.value,qty:+sQty.value,price:+sPrice.value,currency:sCur.value,
+person:sPerson.value,memo:sMemo.value,date:new Date().toLocaleDateString()});
+SS("stockin",d);renderAll();
+}
+
+function calcStock(code){
+let q=0;
+sin().forEach(r=>{if(r.item===code)q+=r.qty});
+prod().forEach(p=>{
+bom().forEach(b=>{
+if(b.item===p.item&&b.process===p.process&&b.mat===code)q-=b.usage*p.input;
+});
+bom().forEach(b=>{
+if(b.item===p.item&&b.process===p.process&&b.output===code)q+=p.good;
+});
+});
+out().forEach(o=>{
+if(o.item===code)q+=o.type==="IN"?(o.qty-o.defect):-o.qty;
+});
+return q;
+}
+
+function renderAll(){
+renderStock();renderLog();
+}
+
+function renderStock(){
+let h="";
+products().forEach(p=>{
+let q=calcStock(p.code);
+h+=`<tr><td>${p.code}</td><td>${p.name}</td><td>${p.type}</td>
+<td>${q}</td><td>${p.min||0}</td>
+<td class="${q<p.min?"low":""}">${q<p.min?"LOW":"OK"}</td></tr>`;
+});
+stockBody.innerHTML=h;
+}
+
+function renderLog(){
+let m=fModule.value,t=fText.value.toLowerCase();
+let h="";
+prod().forEach(r=>{
+if(m!=="ALL"&&m!=="Production")return;
+if(t&&JSON.stringify(r).toLowerCase().indexOf(t)<0)return;
+h+=`<tr><td>${r.date}</td><td>Production</td><td>${r.item}</td><td>${r.process}</td>
+<td>${r.operator}</td><td>${r.good}</td><td>${r.defect}</td><td>${r.memo}</td></tr>`;
+});
+out().forEach(r=>{
+if(m!=="ALL"&&m!=="Outsourcing")return;
+if(t&&JSON.stringify(r).toLowerCase().indexOf(t)<0)return;
+h+=`<tr><td>${r.date}</td><td>Outsourcing</td><td>${r.item}</td><td>${r.type}</td>
+<td>${r.person}</td><td>${r.qty}</td><td>${r.defect}</td><td>${r.memo}</td></tr>`;
+});
+sin().forEach(r=>{
+if(m!=="ALL"&&m!=="StockIn")return;
+if(t&&JSON.stringify(r).toLowerCase().indexOf(t)<0)return;
+h+=`<tr><td>${r.date}</td><td>StockIn</td><td>${r.item}</td><td></td>
+<td>${r.person}</td><td>${r.qty}</td><td></td><td>${r.memo}</td></tr>`;
+});
+logBody.innerHTML=h;
+}
+
+renderAll();
+</script>
 </body>
 </html>
