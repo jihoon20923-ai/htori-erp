@@ -34,30 +34,24 @@ const firebaseConfig = {
   const result = document.getElementById("result");
 
   document.getElementById("testBtn").onclick = async () => {
-     alert("SAVE CLICKED");
-    try {
-      // 1️⃣ Firestore에 데이터 저장
-      await addDoc(collection(db, "test"), {
-        message: "Firebase connected",
-        createdAt: new Date().toISOString()
-      });
+  alert("SAVE CLICKED");
 
-      // 2️⃣ Firestore 데이터 읽기
-      const snapshot = await getDocs(collection(db, "test"));
-      let output = "Saved documents:\n";
+  try {
+    console.log("TRY WRITE");
 
-      snapshot.forEach(doc => {
-        output += JSON.stringify(doc.data()) + "\n";
-      });
+    await addDoc(collection(db, "test"), {
+      message: "Firebase connected",
+      createdAt: new Date().toISOString()
+    });
 
-      result.textContent = output;
-      console.log("Firebase OK");
+    alert("WRITE SUCCESS");
 
-    } catch (e) {
-      console.error(e);
-      result.textContent = "ERROR: " + e.message;
-    }
-  };
+  } catch (e) {
+    console.error(e);
+    alert("ERROR: " + e.message);
+  }
+};
+
 </script>
 
 </body>
