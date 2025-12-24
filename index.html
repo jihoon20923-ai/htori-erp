@@ -2,145 +2,42 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>HTORI ERP – Stock In</title>
-
-<style>
-body{font-family:Arial;background:#f4f6f9;margin:0;padding:20px}
-h2{margin-top:0}
-.card{background:#fff;padding:16px;margin-bottom:20px;border-radius:4px}
-input,select{width:100%;padding:8px;margin-bottom:8px}
-button{padding:10px 16px;background:#12326b;color:#fff;border:none;cursor:pointer}
-table{width:100%;border-collapse:collapse;background:#fff}
-th,td{border:1px solid #ccc;padding:8px;font-size:13px}
-th{background:#eee}
-.flex{display:flex;gap:10px}
-</style>
+<title>HTORI ERP – Firebase Connect Test</title>
 </head>
-
 <body>
 
-<h2>Stock In</h2>
-
-<div class="card">
-  <h3>Stock In Entry</h3>
-
-  <select id="productSelect"></select>
-
-  <div class="flex">
-    <input id="qty" type="number" placeholder="Qty">
-    <input id="unitPrice" type="number" step="0.0001" placeholder="Unit Price">
-  </div>
-
-  <select id="currency">
-    <option value="USD">USD</option>
-    <option value="IDR">IDR</option>
-    <option value="CNY">CNY</option>
-  </select>
-
-  <input id="supplier" placeholder="Supplier">
-  <input id="receivedBy" placeholder="Received By">
-  <input id="memo" placeholder="Memo">
-  <input id="date" type="date">
-
-  <button id="saveStockIn">Save Stock In</button>
-</div>
-
-<div class="card">
-  <h3>Stock In List</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Product</th>
-        <th>Qty</th>
-        <th>Unit Price</th>
-        <th>Currency</th>
-        <th>Supplier</th>
-      </tr>
-    </thead>
-    <tbody id="stockBody"></tbody>
-  </table>
-</div>
+<h2>Firebase Connection Test</h2>
+<button id="btn">TEST SAVE</button>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import {
-    getFirestore,
-    collection,
-    addDoc,
-    getDocs
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, collection, addDoc } 
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  // 🔴 Firebase Config (본인 값 유지)
+  // 🔴 여기에 새 firebaseConfig 붙여넣기
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "PASTE_HERE",
+    authDomain: "PASTE_HERE",
+    projectId: "PASTE_HERE",
+    storageBucket: "PASTE_HERE",
+    messagingSenderId: "PASTE_HERE",
+    appId: "PASTE_HERE"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  const productSelect = document.getElementById("productSelect");
-  const stockBody = document.getElementById("stockBody");
-
-  // 🔹 Load Products
-  async function loadProducts(){
-    productSelect.innerHTML = "";
-    const snap = await getDocs(collection(db, "products"));
-    snap.forEach(doc => {
-      const p = doc.data();
-      productSelect.innerHTML += `<option value="${p.code}|${p.name}">
-        ${p.code} - ${p.name}
-      </option>`;
-    });
-  }
-
-  // 🔹 Load Stock In
-  async function loadStockIn(){
-    stockBody.innerHTML = "";
-    const snap = await getDocs(collection(db, "stock_in"));
-    snap.forEach(doc => {
-      const s = doc.data();
-      stockBody.innerHTML += `
-        <tr>
-          <td>${s.date}</td>
-          <td>${s.productCode}</td>
-          <td>${s.qty}</td>
-          <td>${s.unitPrice}</td>
-          <td>${s.currency}</td>
-          <td>${s.supplier}</td>
-        </tr>
-      `;
-    });
-  }
-
-  loadProducts();
-  loadStockIn();
-
-  // 🔹 Save Stock In
-  document.getElementById("saveStockIn").onclick = async () => {
-    const [productCode, productName] = productSelect.value.split("|");
-
-    await addDoc(collection(db, "stock_in"), {
-      productCode,
-      productName,
-      qty: Number(qty.value),
-      unitPrice: Number(unitPrice.value),
-      currency: currency.value,
-      supplier: supplier.value,
-      receivedBy: receivedBy.value,
-      memo: memo.value,
-      date: date.value,
-      createdAt: new Date().toISOString()
-    });
-
-    alert("Stock In Saved");
-    qty.value = unitPrice.value = supplier.value = receivedBy.value = memo.value = "";
-    loadStockIn();
+  document.getElementById("btn").onclick = async () => {
+    try {
+      await addDoc(collection(db, "connect_test"), {
+        status: "OK",
+        time: new Date().toISOString()
+      });
+      alert("✅ Firebase WRITE SUCCESS");
+    } catch (e) {
+      alert("❌ ERROR: " + e.message);
+      console.error(e);
+    }
   };
 </script>
 
